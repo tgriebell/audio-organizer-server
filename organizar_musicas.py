@@ -77,19 +77,35 @@ class NeuralOrb(tk.Canvas):
         if w < 10: w, h = 300, 300
         cx, cy = w/2, h/2
         self.phase += 0.05
+        
         pulse = (math.sin(self.phase) * 8) + 65
         color = COLOR_NEON_BLUE if self.state == "idle" else COLOR_ACCENT
         if self.state == "success": color = "#fff"
+
         for i in range(6):
             size = pulse + (i * 12)
             opacity_color = self.lerp_color(COLOR_BG, color, (6-i)/15)
             self.create_oval(cx-size, cy-size, cx+size, cy+size, outline=opacity_color, width=2)
+        
         self.create_oval(cx-pulse, cy-pulse, cx+pulse, cy+pulse, outline=color, width=3)
-        if self.state == "busy":
-            for i in range(12):
-                ang = self.phase*2.5 + (i * (math.pi*2/12))
-                px = cx + math.cos(ang) * (pulse + 25); py = cy + math.sin(ang) * (pulse + 25)
-                self.create_oval(px-3, py-3, px+3, py+3, fill=COLOR_ACCENT, outline="")
+
+        if self.state in ["busy", "success"]:
+            num_dots = 12 if self.state == "busy" else 8
+            speed = 2.5 if self.state == "busy" else 1.2
+            dot_color = COLOR_ACCENT if self.state == "busy" else COLOR_NEON_BLUE
+            
+            for i in range(num_dots):
+                ang = self.phase * speed + (i * (math.pi * 2 / num_dots))
+                dist = pulse + 25 if self.state == "busy" else pulse + 40
+                px = cx + math.cos(ang) * dist; py = cy + math.sin(ang) * dist
+                self.create_oval(px-3, py-3, px+3, py+3, fill=dot_color, outline="")
+                
+            if self.state == "success":
+                for i in range(5):
+                    ang = -self.phase * 0.8 + (i * (math.pi * 2 / 5))
+                    px = cx + math.cos(ang) * (pulse + 60); py = cy + math.sin(ang) * (pulse + 60)
+                    self.create_oval(px-2, py-2, px+2, py+2, fill="#fff", outline="")
+
         self.after(30, self.animate)
 
     def lerp_color(self, c1, c2, t):
@@ -123,7 +139,7 @@ class NeuralHubApp(ctk.CTk):
         self.header.pack(fill="x", padx=20, pady=5)
         self.header.bind("<Button-1>", self.start_move)
         self.header.bind("<B1-Motion>", self.do_move)
-        ctk.CTkLabel(self.header, text="NEURAL HUB ENGINE v3.1 // ACTIVE", font=("Consolas", 10, "bold"), text_color=COLOR_TEXT_DIM).pack(side="left")
+        ctk.CTkLabel(self.header, text="NEURAL HUB ENGINE v3.3 // ACTIVE", font=("Consolas", 10, "bold"), text_color=COLOR_TEXT_DIM).pack(side="left")
         ctk.CTkButton(self.header, text="✕", width=40, height=40, fg_color="transparent", hover_color="#c42b1c", command=self.destroy).pack(side="right")
 
         self.hub_area = ctk.CTkFrame(self, fg_color="transparent")
@@ -142,20 +158,25 @@ class NeuralHubApp(ctk.CTk):
         self.btn_action = ctk.CTkButton(self.hub_area, text="INITIALIZE NEURAL DEPLOYMENT", font=("Segoe UI", 16, "bold"), fg_color="transparent", border_width=2, border_color=COLOR_NEON_BLUE, text_color=COLOR_NEON_BLUE, height=65, width=350, corner_radius=32, command=self.run_process)
         self.btn_action.pack(pady=(10, 30))
 
-        self.console_frame = ctk.CTkFrame(self, fg_color=COLOR_CONSOLE_BG, height=180, corner_radius=0, border_width=1, border_color="#0a1a30")
-        self.console_frame.pack(fill="x")
-        self.console_frame.pack_propagate(False)
-        self.console_text = ctk.CTkTextbox(self.console_frame, fg_color="transparent", font=("Consolas", 11), text_color=COLOR_ACCENT, activate_scrollbars=False)
+        self.bottom_area = ctk.CTkFrame(self, fg_color=COLOR_CONSOLE_BG, height=180, corner_radius=0, border_width=1, border_color="#0a1a30")
+        self.bottom_area.pack(fill="x")
+        self.bottom_area.pack_propagate(False)
+        self.console_text = ctk.CTkTextbox(self.bottom_area, fg_color="transparent", font=("Consolas", 11), text_color=COLOR_ACCENT, activate_scrollbars=False)
         self.console_text.pack(fill="both", expand=True, padx=25, pady=15)
 
     def log_console(self, msg, type="INFO"):
-        prefix = {
-            "INFO": "[SYSTEM::LOG]",
-            "SUCCESS": "[CORE::SUCCESS]",
-            "MOVE": "[NEURAL::MOVE]",
-            "WAIT": "[SYSTEM::SCAN]"
-        }.get(type, "[LOG]")
+        prefix = {"INFO": "[SYSTEM::LOG]", "SUCCESS": "[CORE::SUCCESS]", "MOVE": "[NEURAL::MOVE]", "WAIT": "[SYSTEM::SCAN]"}.get(type, "[LOG]")
         self.console_text.insert("end", f"{prefix} {msg}\n"); self.console_text.see("end")
+
+    def show_report(self, count):
+        self.console_text.pack_forget()
+        report_frame = ctk.CTkFrame(self.bottom_area, fg_color="transparent")
+        report_frame.pack(fill="both", expand=True, padx=40, pady=20)
+        stats = [("STATUS", "STABLE", COLOR_ACCENT), ("OBJECTS", f"{count} SYNCED", "#fff"), ("OPTIMIZATION", "100%", COLOR_NEON_BLUE), ("CORE", "ACTIVE", COLOR_ACCENT)]
+        for label, val, col in stats:
+            f = ctk.CTkFrame(report_frame, fg_color="transparent"); f.pack(side="left", expand=True)
+            ctk.CTkLabel(f, text=label, font=("Consolas", 10, "bold"), text_color=COLOR_TEXT_DIM).pack()
+            ctk.CTkLabel(f, text=val, font=("Segoe UI", 18, "bold"), text_color=col).pack()
 
     def start_move(self, e): self.x, self.y = e.x, e.y
     def do_move(self, e): self.geometry(f"+{self.winfo_x() + (e.x - self.x)}+{self.winfo_y() + (e.y - self.y)}")
@@ -225,10 +246,10 @@ class NeuralHubApp(ctk.CTk):
         threading.Thread(target=work, daemon=True).start()
 
     def finish(self, count):
-        self.orb.state = "success"; self.btn_action.configure(state="normal", text="SYSTEM SYNCED", fg_color=COLOR_ACCENT, text_color="black")
+        self.orb.state = "success"; self.btn_action.configure(state="normal", text="NEURAL SYSTEM SYNCED", fg_color=COLOR_ACCENT, text_color="black")
         self.lbl_main.configure(text="CORE STABILITY REACHED")
-        self.lbl_sub.configure(text=f"{count} Neural objects optimized", text_color=COLOR_ACCENT)
-        self.log_console(f"Deployment complete. {count} objects synchronized.", "SUCCESS")
+        self.lbl_sub.configure(text=f"Neural objects optimized for Thiago Griebel", text_color=COLOR_ACCENT)
+        self.show_report(count)
 
 if __name__ == "__main__":
     NeuralHubApp().mainloop()
