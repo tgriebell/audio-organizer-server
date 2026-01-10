@@ -1,0 +1,7 @@
+customtkinter
+mutagen
+pygame
+requests
+pillow
+packaging
+pyinstaller

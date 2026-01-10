@@ -1,0 +1,23 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+
+# PyInstaller artifacts
+build/
+dist/
+*.spec
+
+# User specific
+*.log
+ERRO_LAUNCHER.txt
+AudioOrganizer_Cache/
+
+# Virtual environments
+venv/
+env/
+.env
+
+# OS specific
+Thumbs.db
+Desktop.ini
