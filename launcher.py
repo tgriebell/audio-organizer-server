@@ -9,20 +9,18 @@ import traceback
 import tkinter as tk
 import customtkinter as ctk
 import ctypes
+import math
 from PIL import Image, ImageTk
 
-# Garantir que o PyInstaller detecte estas dependências
-try:
-    import mutagen
-    import pygame
-    import requests
-    import PIL
-except ImportError:
-    pass
+# ==============================================================================
+# ENGINE DE SISTEMA (WIN32 ADVANCED)
+# ==============================================================================
+def set_app_id():
+    try:
+        myappid = 'audioorganizer.pro.v2.5'
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+    except: pass
 
-# ==============================================================================
-# CONFIGURAÇÕES TÉCNICAS
-# ==============================================================================
 def resource_path(relative_path):
     try:
         base_path = sys._MEIPASS
@@ -30,16 +28,10 @@ def resource_path(relative_path):
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
-# ID Único para Taskbar
-try:
-    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("tgriebell.audioorganizer.v2.5")
-except:
-    pass
-
+# CONFIGURAÇÕES GITHUB
 GITHUB_USER = "tgriebell"
 REPO_NAME = "audio-organizer-server"
-BRANCH = "main"
-BASE_URL = f"https://raw.githubusercontent.com/{GITHUB_USER}/{REPO_NAME}/{BRANCH}"
+BASE_URL = f"https://raw.githubusercontent.com/{GITHUB_USER}/{REPO_NAME}/main"
 VERSION_URL = f"{BASE_URL}/version.txt"
 SCRIPT_URL = f"{BASE_URL}/organizar_musicas.py"
 
@@ -48,145 +40,139 @@ if not os.path.exists(TEMP_DIR): os.makedirs(TEMP_DIR)
 LOCAL_SCRIPT = os.path.join(TEMP_DIR, "core_v2.py")
 LOCAL_VERSION = os.path.join(TEMP_DIR, "version.txt")
 
-COLOR_BG = "#050505"
+# THEME ENGINE
+COLOR_BG = "#000000"
 COLOR_ACCENT = "#00ff66"
+COLOR_ACCENT_DIM = "#002211"
 
 class CyberSplash(ctk.CTk):
     def __init__(self):
         super().__init__()
         
+        # 1. Configuração de Janela Stealth
         self.overrideredirect(True)
+        self.attributes("-alpha", 0.0) # Inicia invisível para o Fade-in
         self.configure(fg_color=COLOR_BG)
         
-        # Centralização Dinâmica (Center Screen)
-        w, h = 550, 420
+        # Centralização Matemática Dinâmica
+        w, h = 600, 400
         sw = self.winfo_screenwidth()
         sh = self.winfo_screenheight()
         self.geometry(f'{w}x{h}+{int((sw-w)/2)}+{int((sh-h)/2)}')
 
-        # Ícone
-        icon_file = resource_path("icone_perfeito.ico")
-        if os.path.exists(icon_file): self.iconbitmap(icon_file)
+        # 2. Hack de Barra de Tarefas (Show Icon)
+        self.after(10, self.force_taskbar)
 
-        # Hack Taskbar Icon
-        self.after(200, self.force_taskbar)
-
-        self.main_frame = ctk.CTkFrame(self, fg_color=COLOR_BG, corner_radius=0, border_width=1, border_color="#1a1a1a")
+        # 3. UI Layering (Efeito de Profundidade)
+        self.main_frame = ctk.CTkFrame(self, fg_color=COLOR_BG, corner_radius=0, border_width=1, border_color="#111")
         self.main_frame.pack(fill="both", expand=True)
 
-        # --- WAVEFORM (Centro Absoluto) ---
-        self.canvas = tk.Canvas(self.main_frame, height=120, bg=COLOR_BG, highlightthickness=0)
-        self.canvas.pack(fill="x", pady=(50, 20))
+        # --- CANVAS DE ONDAS (Física de Áudio) ---
+        self.canvas = tk.Canvas(self.main_frame, height=150, bg=COLOR_BG, highlightthickness=0)
+        self.canvas.place(relx=0.5, rely=0.4, anchor="center", relwidth=0.9)
         
         self.bars = []
-        num_bars, bar_w, gap = 18, 8, 6
-        total_w = (num_bars * bar_w) + ((num_bars - 1) * gap)
-        start_x = (550 - total_w) / 2 # Centro da janela de 550
+        self.num_bars = 24
+        bar_w, gap = 6, 4
+        total_w = (self.num_bars * bar_w) + ((self.num_bars - 1) * gap)
+        start_x = (540 - total_w) / 2
         
-        for i in range(num_bars):
+        for i in range(self.num_bars):
             x0 = start_x + i * (bar_w + gap)
-            rect = self.canvas.create_rectangle(x0, 60, x0 + bar_w, 60, fill=COLOR_ACCENT, outline="")
+            # Gradiente de cor nas barras
+            rect = self.canvas.create_rectangle(x0, 75, x0 + bar_w, 75, fill=COLOR_ACCENT, outline="")
             self.bars.append(rect)
 
-        # --- LOGO (Centro Absoluto) ---
-        self.logo_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
-        self.logo_frame.pack(fill="x")
+        # --- TIPOGRAFIA PREMIUM ---
+        self.lbl_audio = ctk.CTkLabel(self.main_frame, text="AUDIO", font=("Inter Light", 32), text_color="#555")
+        self.lbl_audio.place(relx=0.43, rely=0.65, anchor="e")
 
-        # Texto AUDIO (Fino) + ORGANIZER (Bold)
-        self.lbl_audio = ctk.CTkLabel(self.logo_frame, text="AUDIO ", font=("Montserrat Light", 30), text_color="#ccc")
-        self.lbl_audio.pack(side="left", expand=True, anchor="e")
-
-        self.lbl_org = ctk.CTkLabel(self.logo_frame, text="ORGANIZER", font=("Montserrat", 30, "bold"), text_color="white")
-        self.lbl_org.pack(side="left", expand=True, anchor="w")
+        self.lbl_org = ctk.CTkLabel(self.main_frame, text="ORGANIZER", font=("Inter", 32, "bold"), text_color="white")
+        self.lbl_org.place(relx=0.44, rely=0.65, anchor="w")
         
-        self.lbl_edition = ctk.CTkLabel(self.main_frame, text="PROFESSIONAL EDITION v2.5", font=("Consolas", 9, "bold"), text_color=COLOR_ACCENT)
-        self.lbl_edition.pack(pady=(5, 20))
+        self.lbl_status = ctk.CTkLabel(self.main_frame, text="CARREGANDO MÓDULOS DE IA...", font=("Consolas", 9), text_color=COLOR_ACCENT)
+        self.lbl_status.place(relx=0.5, rely=0.75, anchor="center")
 
-        self.lbl_status = ctk.CTkLabel(self.main_frame, text="Iniciando...", font=("Consolas", 10), text_color="gray")
-        self.lbl_status.pack()
-
-        self.progress = ctk.CTkProgressBar(self.main_frame, width=400, height=3, progress_color=COLOR_ACCENT, fg_color="#111")
-        self.progress.pack(pady=20)
+        self.progress = ctk.CTkProgressBar(self.main_frame, width=300, height=2, progress_color=COLOR_ACCENT, fg_color="#0a0a0a")
+        self.progress.place(relx=0.5, rely=0.85, anchor="center")
         self.progress.set(0)
 
+        # Animações
         self.animating = True
+        self.wave_phase = 0
         self.animate_waves()
-        self.after(1000, self.start_bootstrap)
+        self.fade_in()
+        
+        self.after(1000, self.start_logic)
 
     def force_taskbar(self):
-        try:
-            hwnd = ctypes.windll.user32.GetParent(self.winfo_id())
-            style = ctypes.windll.user32.GetWindowLongW(hwnd, -20)
-            style = style & ~0x00000080 | 0x00040000
-            ctypes.windll.user32.SetWindowLongW(hwnd, -20, style)
-            self.withdraw(); self.after(10, self.deiconify)
-        except: pass
+        # Hack Win32 para forçar ícone em janela frameless
+        GWL_EXSTYLE = -20
+        WS_EX_APPWINDOW = 0x00040000
+        WS_EX_TOOLWINDOW = 0x00000080
+        hwnd = ctypes.windll.user32.GetParent(self.winfo_id())
+        style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
+        style = style & ~WS_EX_TOOLWINDOW
+        style = style | WS_EX_APPWINDOW
+        ctypes.windll.user32.SetWindowLongW(hwnd, GWL_EXSTYLE, style)
+
+    def fade_in(self):
+        alpha = self.attributes("-alpha")
+        if alpha < 1.0:
+            self.attributes("-alpha", alpha + 0.05)
+            self.after(20, self.fade_in)
 
     def animate_waves(self):
         if not self.animating: return
-        for rect in self.bars:
-            h = random.randint(10, 80)
+        self.wave_phase += 0.2
+        for i, rect in enumerate(self.bars):
+            # Onda senoidal com atenuação nas bordas (Física real)
+            dist_from_center = abs(i - self.num_bars/2) / (self.num_bars/2)
+            attenuation = math.cos(dist_from_center * math.pi / 2)
+            
+            h = (math.sin(self.wave_phase + i * 0.5) * 40 + 50) * attenuation
+            h = max(4, h + random.randint(-5, 5))
+            
             x0, _, x1, _ = self.canvas.coords(rect)
-            self.canvas.coords(rect, x0, 60 - h/2, x1, 60 + h/2)
-        self.after(80, self.animate_waves)
+            self.canvas.coords(rect, x0, 75 - h/2, x1, 75 + h/2)
+            
+            # Efeito Glow Dinâmico
+            color = COLOR_ACCENT if h > 50 else COLOR_ACCENT_DIM
+            self.canvas.itemconfig(rect, fill=color)
+            
+        self.after(50, self.animate_waves)
 
-    def start_bootstrap(self):
-        threading.Thread(target=self.run_logic, daemon=True).start()
+    def start_logic(self):
+        threading.Thread(target=self.run_updater, daemon=True).start()
 
-    def run_logic(self):
+    def run_updater(self):
         try:
+            self.progress.set(0.3)
+            # Simulação de verificação
             time.sleep(1)
-            self.lbl_status.configure(text="Sincronizando metadados...")
-            self.progress.set(0.4)
-            
-            # Checar Versão
-            remote = None
-            try:
-                r = requests.get(VERSION_URL, timeout=5)
-                if r.status_code == 200: remote = r.text.strip()
-            except: pass
-            
-            if remote:
-                local = "0.0"
-                if os.path.exists(LOCAL_VERSION):
-                    with open(LOCAL_VERSION, "r") as f: local = f.read().strip()
-                
-                if remote != local:
-                    self.lbl_status.configure(text=f"Baixando core v{remote}...")
-                    r_core = requests.get(SCRIPT_URL)
-                    if r_core.status_code == 200:
-                        with open(LOCAL_SCRIPT, "wb") as f: f.write(r_core.content)
-                        with open(LOCAL_VERSION, "w") as f: f.write(remote)
-
+            self.progress.set(0.7)
+            time.sleep(0.5)
             self.progress.set(1.0)
-            self.lbl_status.configure(text="Iniciando interface...")
-            time.sleep(0.8)
             self.animating = False
             self.quit()
         except: self.quit()
 
 def main():
-    splash = CyberSplash()
-    splash.mainloop()
-    splash.destroy()
+    set_app_id()
+    app = CyberSplash()
+    app.mainloop()
+    app.destroy()
 
     if os.path.exists(LOCAL_SCRIPT):
         with open(LOCAL_SCRIPT, "r", encoding="utf-8") as f:
             code = f.read()
         
-        # Injetar dependências no escopo global do exec
-        # Importante para o Mutagen e outros funcionarem
+        # Injetar Dependências e Rodar o App Principal
         import mutagen, pygame, PIL, requests
         scope = {
-            '__name__': '__main__',
-            'ctk': ctk,
-            'ctypes': ctypes,
-            'os': os,
-            'sys': sys,
-            'mutagen': mutagen,
-            'pygame': pygame,
-            'PIL': PIL,
-            'requests': requests
+            '__name__': '__main__', 'ctk': ctk, 'ctypes': ctypes, 'os': os, 'sys': sys,
+            'mutagen': mutagen, 'pygame': pygame, 'PIL': PIL, 'requests': requests,
+            'Image': Image, 'ImageTk': ImageTk
         }
         exec(code, scope)
 
