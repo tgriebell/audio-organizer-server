@@ -30,7 +30,7 @@ def print_banner():
     ██╔═══╝ ██╔══██║██║     ██╔═██╗     ██║╚██╔╝██║██║   ██║╚════██║██║██║      
     ██║     ██║  ██║╚██████╗██║  ██╗    ██║ ╚═╝ ██║╚██████╔╝███████║██║╚██████╗ 
     ╚═╝     ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝    ╚═╝     ╚═╝ ╚═════╝ ╚══════╝╚═╝ ╚═════╝ 
-                                                      AI AUDIO ORGANIZER v3.0
+                                                      AI AUDIO ORGANIZER v1.1
     ''' + C.END)
     print(C.WHITE + "    " + "—" * 70 + C.END)
 
@@ -138,6 +138,14 @@ def normalizar_texto(texto):
 def organizar():
     print_banner()
     caminho_entrada = os.path.join(os.getcwd(), PASTA_ENTRADA)
+    
+    # GARANTIA DE ESTRUTURA: Cria todas as pastas de categoria logo no início
+    print(f"    {C.CYAN}🛠️ VERIFICANDO ESTRUTURA DE PASTAS...{C.END}")
+    pastas_necessarias = list(REGRAS_PALAVRAS.keys()) + ["07_Hits_Brasileiros_Copyright_Cuidado", "08_Outros_Nao_Classificados"]
+    for pasta in pastas_necessarias:
+        caminho_p = os.path.join(os.getcwd(), pasta)
+        if not os.path.exists(caminho_p):
+            os.makedirs(caminho_p)
     
     if not os.path.exists(caminho_entrada):
         os.makedirs(caminho_entrada)
