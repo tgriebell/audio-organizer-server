@@ -123,27 +123,39 @@ class NeuralHubApp(ctk.CTk):
         self.header.pack(fill="x", padx=20, pady=5)
         self.header.bind("<Button-1>", self.start_move)
         self.header.bind("<B1-Motion>", self.do_move)
-        ctk.CTkLabel(self.header, text="NEURAL HUB ENGINE v3.0 // ACTIVE", font=("Consolas", 10, "bold"), text_color=COLOR_TEXT_DIM).pack(side="left")
+        ctk.CTkLabel(self.header, text="NEURAL HUB ENGINE v3.1 // ACTIVE", font=("Consolas", 10, "bold"), text_color=COLOR_TEXT_DIM).pack(side="left")
         ctk.CTkButton(self.header, text="✕", width=40, height=40, fg_color="transparent", hover_color="#c42b1c", command=self.destroy).pack(side="right")
 
         self.hub_area = ctk.CTkFrame(self, fg_color="transparent")
         self.hub_area.pack(fill="both", expand=True)
         self.orb = NeuralOrb(self.hub_area, width=400, height=350)
-        self.orb.pack(pady=(20, 0))
+        self.orb.pack(pady=(10, 0))
         self.lbl_main = ctk.CTkLabel(self.hub_area, text="SCANNING...", font=("Segoe UI Light", 32), text_color="white")
         self.lbl_main.pack(pady=5)
         self.lbl_sub = ctk.CTkLabel(self.hub_area, text="Awaiting neural objects", font=("Consolas", 12), text_color=COLOR_NEON_BLUE)
         self.lbl_sub.pack()
+        
+        self.progress_bar = ctk.CTkProgressBar(self.hub_area, width=400, height=2, fg_color="#0a1a30", progress_color=COLOR_ACCENT)
+        self.progress_bar.set(0)
+        self.progress_bar.pack(pady=20)
+
         self.btn_action = ctk.CTkButton(self.hub_area, text="INITIALIZE NEURAL DEPLOYMENT", font=("Segoe UI", 16, "bold"), fg_color="transparent", border_width=2, border_color=COLOR_NEON_BLUE, text_color=COLOR_NEON_BLUE, height=65, width=350, corner_radius=32, command=self.run_process)
-        self.btn_action.pack(pady=40)
-        self.console_frame = ctk.CTkFrame(self, fg_color=COLOR_CONSOLE_BG, height=200, corner_radius=0, border_width=1, border_color="#0a1a30")
+        self.btn_action.pack(pady=(10, 30))
+
+        self.console_frame = ctk.CTkFrame(self, fg_color=COLOR_CONSOLE_BG, height=180, corner_radius=0, border_width=1, border_color="#0a1a30")
         self.console_frame.pack(fill="x")
         self.console_frame.pack_propagate(False)
         self.console_text = ctk.CTkTextbox(self.console_frame, fg_color="transparent", font=("Consolas", 11), text_color=COLOR_ACCENT, activate_scrollbars=False)
         self.console_text.pack(fill="both", expand=True, padx=25, pady=15)
 
-    def log_console(self, msg):
-        self.console_text.insert("end", f"> {msg}\n"); self.console_text.see("end")
+    def log_console(self, msg, type="INFO"):
+        prefix = {
+            "INFO": "[SYSTEM::LOG]",
+            "SUCCESS": "[CORE::SUCCESS]",
+            "MOVE": "[NEURAL::MOVE]",
+            "WAIT": "[SYSTEM::SCAN]"
+        }.get(type, "[LOG]")
+        self.console_text.insert("end", f"{prefix} {msg}\n"); self.console_text.see("end")
 
     def start_move(self, e): self.x, self.y = e.x, e.y
     def do_move(self, e): self.geometry(f"+{self.winfo_x() + (e.x - self.x)}+{self.winfo_y() + (e.y - self.y)}")
@@ -158,16 +170,20 @@ class NeuralHubApp(ctk.CTk):
         self.found_files = found
         self.lbl_main.configure(text=f"{len(found)} OBJECTS DETECTED")
         self.lbl_sub.configure(text=f"Neural sorting ready for Thiago Griebel")
-        self.log_console(f"Scan complete: {len(found)} objects located.")
+        self.log_console(f"Scan complete: {len(found)} objects located.", "WAIT")
 
     def run_process(self):
         if not self.found_files: return
         self.orb.state = "busy"; self.btn_action.configure(state="disabled", text="DEPLOYING...")
+        self.progress_bar.set(0)
+        
         def work():
             for pasta in NEURAL_BRAIN.keys():
                 os.makedirs(os.path.join(self.base_path, pasta), exist_ok=True)
+            
+            total = len(self.found_files)
             count = 0
-            for orig_path in self.found_files:
+            for i, orig_path in enumerate(self.found_files):
                 name = os.path.basename(orig_path)
                 # NORMALIZAÇÃO HIPERINTELIGENTE
                 text_analise = name.lower()
@@ -185,7 +201,6 @@ class NeuralHubApp(ctk.CTk):
                 scores = {cat: 0 for cat in NEURAL_BRAIN.keys()}
                 for cat, keywords in NEURAL_BRAIN.items():
                     for word in keywords:
-                        # PESO PARA MATCH EXATO EM PALAVRAS-CHAVE
                         if f" {word} " in f" {text_analise} ":
                             scores[cat] += 2
                         elif word in text_analise:
@@ -195,20 +210,25 @@ class NeuralHubApp(ctk.CTk):
                 if best_cat:
                     try:
                         shutil.move(orig_path, os.path.join(self.base_path, best_cat, name))
-                        self.after(0, lambda n=name, c=best_cat: self.log_console(f"[MOVED] {n[:25]}... >> [{c[:12]}]"))
+                        self.after(0, lambda n=name, c=best_cat: self.log_console(f"{n[:25]}... >> [{c[:12]}]", "MOVE"))
                         count += 1
-                        time.sleep(0.04)
                     except: pass
                 else:
-                    self.after(0, lambda n=name: self.log_console(f"[STAYED] {n[:25]}... No neural match found."))
+                    self.after(0, lambda n=name: self.log_console(f"{n[:25]}... No neural match.", "INFO"))
+                
+                # ATUALIZA PROGRESSO
+                progress = (i + 1) / total
+                self.after(0, lambda p=progress: self.progress_bar.set(p))
+                time.sleep(0.04)
+
             self.after(0, lambda c=count: self.finish(c))
         threading.Thread(target=work, daemon=True).start()
 
     def finish(self, count):
         self.orb.state = "success"; self.btn_action.configure(state="normal", text="SYSTEM SYNCED", fg_color=COLOR_ACCENT, text_color="black")
-        self.lbl_main.configure(text="SYNC COMPLETE")
-        self.lbl_sub.configure(text=f"{count} Objects organized", text_color=COLOR_ACCENT)
-        self.log_console(f"Deployment complete. {count} objects moved.")
+        self.lbl_main.configure(text="CORE STABILITY REACHED")
+        self.lbl_sub.configure(text=f"{count} Neural objects optimized", text_color=COLOR_ACCENT)
+        self.log_console(f"Deployment complete. {count} objects synchronized.", "SUCCESS")
 
 if __name__ == "__main__":
     NeuralHubApp().mainloop()
