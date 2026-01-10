@@ -39,26 +39,26 @@ PASTA_ENTRADA_NOME = "_ENTRADA_DE_MUSICAS"
 # SUPER NEURAL BRAIN (20 PASTAS)
 # ==============================================================================
 NEURAL_BRAIN = {
-    "01_Alta_Energia_Impacto_Esportes_Carros_Acao": ["powerful", "exciting", "rock", "metal", "sport", "action", "extreme", "energy", "stomp", "drums", "driving", "aggressive", "hard", "pumping", "claps", "fast", "impact"],
-    "02_Cinematic_Emocao_Filmes_Documentarios_Drama": ["cinematic", "epic", "dramatic", "score", "trailer", "orchestra", "emotional", "documentary", "sweeping", "heroic", "majestic", "story", "memories", "letter", "depth", "ethereal", "grand"],
-    "03_Good_Vibes_Lifestyle_Vlog_Viagem_Comercial": ["uplifting", "happy", "carefree", "pop", "indie", "good vibes", "summer", "beach", "travel", "lifestyle", "commercial", "bright", "optimistic", "vlog", "joy", "look", "me", "sun", "fun"],
-    "04_Lounge_Tech_Background_Fundo_Neutro_Lofi": ["peaceful", "ambient", "lounge", "lofi", "chill", "atmosphere", "background", "calm", "relax", "mellow", "smooth", "minimalist", "subtle", "dreamy", "floating"],
-    "05_Vinhetas_Logos_Sonoros_Abaixo_30s": ["logo", "ident", "sting", "bumper", "jingle", "intro", "reveal", "vinheta", "transition", "short", "outro", "sfx"],
-    "06_Casamentos_Cerimonias": ["wedding", "casamento", "bride", "noiva", "ceremony", "romantic", "love", "piano", "sweet", "strings", "eternity", "pure", "holy", "sentimental", "proposal"],
-    "07_Hits_Brasileiros_Copyright_Cuidado": ["sertanejo", "pagode", "funk brasil", "mpb", "jorge", "mateus", "brazilian", "samba", "piseiro", "forro", "carnaval", "brasil"],
-    "08_Fashion_Style_Beauty_Luxury": ["fashion", "style", "beauty", "luxury", "elegant", "chic", "catwalk", "model", "stylish", "vogue", "glamour", "high-end", "aesthetic", "trend", "boutique"],
-    "09_Corporate_Business_Tecnologia": ["corporate", "business", "tech", "technology", "innovation", "success", "professional", "motivational", "modern", "clean", "startup", "productive", "presentation"],
-    "10_Suspense_Terror_Dark": ["dark", "scary", "tension", "horror", "terror", "suspense", "mystery", "creepy", "fear", "ghost", "thriller", "ominous", "eerie", "haunting", "shadows"],
-    "11_Comedy_Fun_Quirky": ["funny", "comedy", "quirky", "humor", "cartoon", "animation", "sneaky", "pizzicato", "silly", "playful", "bouncy", "clown"],
-    "12_Urban_Trap_HipHop_Modern": ["hip hop", "rap", "trap", "drill", "beat", "urban", "street", "bass", "808", "gangsta", "swagger", "rnb", "city", "modern beat"],
-    "13_Acoustic_Folk_Rustico": ["acoustic", "folk", "country", "roots", "guitar", "rustic", "nature", "organic", "unplugged", "earthy", "mountains", "campfire"],
-    "14_World_Music_Cultural_Regional": ["latin", "salsa", "asian", "african", "reggae", "world", "culture", "tribal", "ethnic", "oriental", "exotic", "reggaeton"],
-    "15_Holiday_Sazonal_Natal_Feriados": ["christmas", "xmas", "holiday", "santa", "halloween", "seasonal", "jingle bells", "winter", "easter"],
-    "16_Kids_Infantil_Games_Escola": ["kids", "children", "game", "8bit", "arcade", "preschool", "cute", "nursery", "tiny", "preschool"],
-    "17_Vocals_Cancoes_Com_Letra": ["lyrical", "vocal", "singer", "lyrics", "song", "voice", "female", "male", "chorus", "harmony", "shouts"],
-    "18_Jazz_Blues_Classy_Sophisticated": ["jazz", "blues", "saxophone", "swing", "classy", "trumpet", "cocktail", "upscale", "sophisticated", "elegant", "bossa"],
-    "19_Electronic_Dance_Club_House_Techno": ["edm", "house", "techno", "dubstep", "party", "dance", "club", "rave", "trance", "synthwave", "future", "digital"],
-    "20_Experimental_Abstract_SoundDesign": ["experimental", "abstract", "sound design", "glitch", "texture", "noise", "creative", "unusual", "artistic", "avante-garde"]
+    "01_Alta_Energia_Impacto_Esportes_Carros_Acao": ["powerful", "exciting", "rock", "metal", "sport", "action", "extreme", "energy", "stomp", "drums", "driving", "aggressive", "hard", "pumping", "claps", "fast", "impact", "stadium", "power", "zac nelson", "viking", "energy", "pumping"],
+    "02_Cinematic_Emocao_Filmes_Documentarios_Drama": ["cinematic", "epic", "dramatic", "score", "trailer", "orchestra", "emotional", "documentary", "sweeping", "heroic", "majestic", "story", "memories", "letter", "depth", "ethereal", "grand", "inspiration", "nidred", "guiding", "atmospheric", "hopeful", "oliver michael", "john isaac"],
+    "03_Good_Vibes_Lifestyle_Vlog_Viagem_Comercial": ["uplifting", "happy", "carefree", "pop", "indie", "good vibes", "summer", "beach", "travel", "lifestyle", "commercial", "bright", "optimistic", "vlog", "joy", "look", "me", "sun", "fun", "positive", "ian post", "seth parson", "slpstrm"],
+    "04_Lounge_Tech_Background_Fundo_Neutro_Lofi": ["peaceful", "ambient", "lounge", "lofi", "chill", "atmosphere", "background", "calm", "relax", "mellow", "smooth", "minimalist", "subtle", "dreamy", "floating", "morkovkasound", "opaline", "horizons", "chillout", "lo-fi", "evgeny bardyuzha"],
+    "05_Vinhetas_Logos_Sonoros_Abaixo_30s": ["logo", "ident", "sting", "bumper", "jingle", "intro", "reveal", "vinheta", "transition", "short", "outro", "sfx", "0-30", "teaser", "loop", "ident", "ma ", "audiojungle"],
+    "06_Casamentos_Cerimonias": ["wedding", "casamento", "bride", "noiva", "ceremony", "romantic", "love", "piano", "sweet", "strings", "eternity", "pure", "holy", "sentimental", "proposal", "marriage", "celestial"],
+    "07_Hits_Brasileiros_Copyright_Cuidado": ["sertanejo", "pagode", "funk brasil", "mpb", "jorge", "mateus", "brazilian", "samba", "piseiro", "forro", "carnaval", "brasil", "bebe", "情熱"],
+    "08_Fashion_Style_Beauty_Luxury": ["fashion", "style", "beauty", "luxury", "elegant", "chic", "catwalk", "model", "stylish", "vogue", "glamour", "high-end", "aesthetic", "trend", "boutique", "runway", "classy"],
+    "09_Corporate_Business_Tecnologia": ["corporate", "business", "tech", "technology", "innovation", "success", "professional", "motivational", "modern", "clean", "startup", "productive", "presentation", "nobou", "machine", "echoes", "industrial", "rex banner", "confident", "business guitar"],
+    "10_Suspense_Terror_Dark": ["dark", "scary", "tension", "horror", "terror", "suspense", "mystery", "creepy", "fear", "ghost", "thriller", "ominous", "eerie", "haunting", "shadows", "nightmare", "gothic"],
+    "11_Comedy_Fun_Quirky": ["funny", "comedy", "quirky", "humor", "cartoon", "animation", "sneaky", "pizzicato", "silly", "playful", "bouncy", "clown", "mischievous"],
+    "12_Urban_Trap_HipHop_Modern": ["hip hop", "rap", "trap", "drill", "beat", "urban", "street", "bass", "808", "gangsta", "swagger", "rnb", "city", "modern beat", "lo-fi beat", "curtis cole"],
+    "13_Acoustic_Folk_Rustico": ["acoustic", "folk", "country", "roots", "guitar", "rustic", "nature", "organic", "unplugged", "earthy", "mountains", "campfire", "banjo", "the gray havens"],
+    "14_World_Music_Cultural_Regional": ["latin", "salsa", "asian", "african", "reggae", "world", "culture", "tribal", "ethnic", "oriental", "exotic", "reggaeton", "indian", "arabic"],
+    "15_Holiday_Sazonal_Natal_Feriados": ["christmas", "xmas", "holiday", "santa", "halloween", "seasonal", "jingle bells", "winter", "easter", "spooky", "icel."],
+    "16_Kids_Infantil_Games_Escola": ["kids", "children", "game", "8bit", "arcade", "preschool", "cute", "nursery", "tiny", "preschool", "educational"],
+    "17_Vocals_Cancoes_Com_Letra": ["lyrical", "vocal", "singer", "lyrics", "song", "voice", "female", "male", "chorus", "harmony", "shouts", "featuring", "moon ft"],
+    "18_Jazz_Blues_Classy_Sophisticated": ["jazz", "blues", "saxophone", "swing", "classy", "trumpet", "cocktail", "upscale", "sophisticated", "elegant", "bossa", "smooth jazz", "stanley gurvich"],
+    "19_Electronic_Dance_Club_House_Techno": ["edm", "house", "techno", "dubstep", "party", "dance", "club", "rave", "trance", "synthwave", "future", "digital", "electro", "red city hero"],
+    "20_Experimental_Abstract_SoundDesign": ["experimental", "abstract", "sound design", "glitch", "texture", "noise", "creative", "unusual", "artistic", "avante-garde", "minimal"]
 }
 
 # ==============================================================================
@@ -169,17 +169,28 @@ class NeuralHubApp(ctk.CTk):
             count = 0
             for orig_path in self.found_files:
                 name = os.path.basename(orig_path)
+                # NORMALIZAÇÃO HIPERINTELIGENTE
                 text_analise = name.lower()
+                text_analise = re.sub(r'[_.\-()\[\]]', ' ', text_analise)
+                
                 try:
                     audio = MutagenFile(orig_path, easy=True)
                     if audio:
-                        for key in ['artist', 'genre', 'comment', 'title']:
-                            if key in audio: text_analise += " " + " ".join(audio[key]).lower()
+                        for key in ['artist', 'genre', 'comment', 'title', 'album']:
+                            if key in audio: 
+                                metadata_text = " ".join(audio[key]).lower()
+                                text_analise += " " + re.sub(r'[_.\-()\[\]]', ' ', metadata_text)
                 except: pass
+                
                 scores = {cat: 0 for cat in NEURAL_BRAIN.keys()}
                 for cat, keywords in NEURAL_BRAIN.items():
                     for word in keywords:
-                        if word in text_analise: scores[cat] += 1
+                        # PESO PARA MATCH EXATO EM PALAVRAS-CHAVE
+                        if f" {word} " in f" {text_analise} ":
+                            scores[cat] += 2
+                        elif word in text_analise:
+                            scores[cat] += 1
+                            
                 best_cat = max(scores, key=scores.get) if max(scores.values()) > 0 else None
                 if best_cat:
                     try:
