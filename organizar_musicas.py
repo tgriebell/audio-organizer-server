@@ -126,6 +126,9 @@ REGRAS_PALAVRAS = {
     ],
     "19_Electronic_Dance_Club_House_Techno": [
         "edm", "house", "techno", "dubstep", "trance", "club", "rave", "party", "dance", "beat", "festival"
+    ],
+    "20_Experimental_Abstract_SoundDesign": [
+        "experimental", "abstract", "sound design", "glitch", "texture", "drone", "avant garde", "noise", "industrial", "fx", "atmosphere", "weird"
     ]
 }
 
@@ -139,20 +142,31 @@ def organizar():
     if not os.path.exists(caminho_entrada):
         os.makedirs(caminho_entrada)
 
-    arquivos = [f for f in os.listdir(caminho_entrada) if os.path.isfile(os.path.join(caminho_entrada, f))]
+    # VARREDURA PROFUNDA (Deep Scan)
+    arquivos_encontrados = []
+    extensores_validos = ('.mp3', '.wav', '.aiff', '.flac', '.ogg', '.m4a', '.wma')
+
+    print(f"    {C.CYAN}🔎 ESCANEANDO SUBPASTAS...{C.END}")
     
-    if not arquivos:
-        print(f"\n    {C.RED}❌ NENHUM ARQUIVO ENCONTRADO EM: {PASTA_ENTRADA}{C.END}")
+    for root, dirs, files in os.walk(caminho_entrada):
+        for file in files:
+            if file.lower().endswith(extensores_validos):
+                caminho_completo = os.path.join(root, file)
+                arquivos_encontrados.append(caminho_completo)
+    
+    if not arquivos_encontrados:
+        print(f"\n    {C.RED}❌ NENHUM ARQUIVO DE ÁUDIO ENCONTRADO EM: {PASTA_ENTRADA} (NEM NAS SUBPASTAS){C.END}")
         return
 
-    loading_bar(len(arquivos))
+    loading_bar(len(arquivos_encontrados))
     
     stats = {}
     movidos = 0
 
-    print(f"    {C.WHITE}PROCESSANDO {len(arquivos)} ARQUIVO(S)...{C.END}\n")
+    print(f"    {C.WHITE}PROCESSANDO {len(arquivos_encontrados)} ARQUIVO(S)...{C.END}\n")
 
-    for arquivo in arquivos:
+    for caminho_origem in arquivos_encontrados:
+        arquivo = os.path.basename(caminho_origem) # Nome do arquivo
         nome_lower = normalizar_texto(arquivo)
         destino_final = None
         motivo = ""
@@ -180,14 +194,23 @@ def organizar():
 
         # Interface Visual do "Card"
         if destino_final:
-            origem = os.path.join(caminho_entrada, arquivo)
-            destino = os.path.join(os.getcwd(), destino_final, arquivo)
+            # Cria pasta de destino se não existir (importante para a nova pasta 20)
+            caminho_destino_pasta = os.path.join(os.getcwd(), destino_final)
+            if not os.path.exists(caminho_destino_pasta):
+                os.makedirs(caminho_destino_pasta)
+
+            destino = os.path.join(caminho_destino_pasta, arquivo)
             
+            # Tratamento para duplicatas
+            if os.path.exists(destino):
+                base, ext = os.path.splitext(arquivo)
+                destino = os.path.join(caminho_destino_pasta, f"{base}_{int(time.time())}{ext}")
+
             nome_display = (arquivo[:45] + '..') if len(arquivo) > 45 else arquivo
             pasta_display = destino_final.split('_', 1)[1].replace('_', ' ')
 
             try:
-                shutil.move(origem, destino)
+                shutil.move(caminho_origem, destino)
                 print(f"    {C.WHITE}┌── 🎵 {C.BOLD}{nome_display}{C.END}")
                 print(f"    {C.WHITE}│   ├── 📂 {C.GREEN}{pasta_display}{C.END}")
                 print(f"    {C.WHITE}│   └── ✨ {motivo}")
@@ -195,13 +218,21 @@ def organizar():
                 
                 stats[destino_final] = stats.get(destino_final, 0) + 1
                 movidos += 1
-                time.sleep(0.3) # Pequena pausa para efeito visual
+                time.sleep(0.1) 
             except Exception as e:
                 print(f"    {C.RED}┌── ❌ ERRO AO MOVER: {arquivo}{C.END}")
                 print(f"    {C.RED}└── {str(e)}{C.END}\n")
         else:
             print(f"    {C.WHITE}┌── 🎵 {C.BOLD}{arquivo}{C.END}")
-            print(f"    {C.WHITE}└── ⚠️ {C.RED}NÃO CLASSIFICADO (SEM PADRÕES CONHECIDOS){C.END}\n")
+            print(f"    {C.WHITE}└── ⚠️ {C.RED}NÃO CLASSIFICADO{C.END}\n")
+
+    # Limpeza de pastas vazias na origem (opcional, mas elegante)
+    # Tenta remover as pastas de onde os arquivos saíram se elas ficaram vazias
+    try:
+        if os.path.dirname(caminho_origem) != caminho_entrada:
+             os.rmdir(os.path.dirname(caminho_origem))
+    except:
+        pass # Se não estiver vazia, ignora
 
     # Resumo Final
     print(f"    {C.WHITE}—" * 70 + C.END)
