@@ -49,6 +49,14 @@ if not os.path.exists(TEMP_DIR):
 LOCAL_SCRIPT = os.path.join(TEMP_DIR, "core_v2.py")
 LOCAL_VERSION = os.path.join(TEMP_DIR, "version.txt")
 
+def resource_path(relative_path):
+    """ Retorna o caminho absoluto, funcionando para dev e para o PyInstaller """
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 # PALETA CYBER-DARK
 COLOR_BG = "#050505"
 COLOR_ACCENT = "#00ff66" # Neon Green
@@ -71,9 +79,11 @@ class CyberSplash(ctk.CTk):
         y = (screen_height/2) - (h/2)
         self.geometry(f'{w}x{h}+{int(x)}+{int(y)}')
 
-        # Ícone
-        if os.path.exists("icone_perfeito.ico"):
-            self.iconbitmap("icone_perfeito.ico")
+        # Ícone Seguro
+        icon_path = resource_path("icone_perfeito.ico")
+        if os.path.exists(icon_path):
+            self.iconbitmap(icon_path)
+
 
         # Forçar foco e taskbar (Hack para overrideredirect)
         self.after(10, self.force_taskbar)
