@@ -38,7 +38,7 @@ def print_header():
     print(C.CYAN + "╔════════════════════════════════════════════════════════════════╗")
     print("║                                                                ║")
     print(f"║   {C.BOLD}{C.WHITE}AUDIO ORGANIZER - SYSTEM UPDATE MANAGER{C.END}{C.CYAN}                      ║")
-    print("║   v1.0 - Connected to GitHub Server                            ║")
+    print("║   v1.1 - Connected to GitHub Server                            ║")
     print("║                                                                ║")
     print("╚════════════════════════════════════════════════════════════════╝" + C.END)
     print("")
