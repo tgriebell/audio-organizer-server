@@ -9,277 +9,184 @@ import traceback
 import tkinter as tk
 import customtkinter as ctk
 import ctypes
-
-# Dummy imports para o PyInstaller detectar dependências do script baixado
-try:
-    import mutagen
-    import pygame
-    from PIL import Image, ImageTk
-except ImportError:
-    pass
+from PIL import Image, ImageTk
 
 # ==============================================================================
-# CONFIGURAÇÃO DE DEBUG & SYSTEM
+# CONFIGURAÇÕES TÉCNICAS DE SISTEMA
 # ==============================================================================
-# Correção para o ícone na barra de tarefas (Windows)
-try:
-    myappid = 'br.com.audioorganizer.launcher.v2.5'
-    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
-except:
-    pass
-
-def log_fatal_error(e):
-    desktop = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
-    log_path = os.path.join(desktop, 'ERRO_LAUNCHER.txt')
-    with open(log_path, "w") as f:
-        f.write(f"ERRO FATAL NO LAUNCHER:\n{str(e)}\n\nDETALHES:\n{traceback.format_exc()}")
-
 def resource_path(relative_path):
-    """ Retorna o caminho absoluto, funcionando para dev e para o PyInstaller """
+    """ Gerencia caminhos de recursos dentro do EXE ou em Desenvolvimento """
     try:
         base_path = sys._MEIPASS
     except Exception:
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
+# ID Único para o Windows agrupar o app na barra de tarefas
+try:
+    myappid = 'tgriebell.audioorganizer.v2.5.pro'
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+except:
+    pass
+
+# CONFIGURAÇÕES GITHUB
 GITHUB_USER = "tgriebell"
 REPO_NAME = "audio-organizer-server"
 BRANCH = "main"
-
 BASE_URL = f"https://raw.githubusercontent.com/{GITHUB_USER}/{REPO_NAME}/{BRANCH}"
 VERSION_URL = f"{BASE_URL}/version.txt"
 SCRIPT_URL = f"{BASE_URL}/organizar_musicas.py"
 
 TEMP_DIR = os.path.join(tempfile.gettempdir(), "AudioOrganizer_Cache")
-if not os.path.exists(TEMP_DIR):
-    os.makedirs(TEMP_DIR)
-
+if not os.path.exists(TEMP_DIR): os.makedirs(TEMP_DIR)
 LOCAL_SCRIPT = os.path.join(TEMP_DIR, "core_v2.py")
 LOCAL_VERSION = os.path.join(TEMP_DIR, "version.txt")
 
-# PALETA CYBER-DARK
+# DESIGN SYSTEM
 COLOR_BG = "#050505"
-COLOR_ACCENT = "#00ff66" # Neon Green
-COLOR_ACCENT_DIM = "#008f39"
-COLOR_TEXT = "#ffffff"
+COLOR_ACCENT = "#00ff66"
+COLOR_ACCENT_DIM = "#004d1f"
 
 class CyberSplash(ctk.CTk):
     def __init__(self):
         super().__init__()
         
-        # Configuração de Janela
+        # Janela Frameless e Centralizada
         self.overrideredirect(True)
         self.configure(fg_color=COLOR_BG)
         
-        # Centralizar
-        w, h = 500, 350
-        screen_width = self.winfo_screenwidth()
-        screen_height = self.winfo_screenheight()
-        x = (screen_width/2) - (w/2)
-        y = (screen_height/2) - (h/2)
-        self.geometry(f'{w}x{h}+{int(x)}+{int(y)}')
+        width, height = 550, 400
+        sw = self.winfo_screenwidth()
+        sh = self.winfo_screenheight()
+        x = (sw - width) / 2
+        y = (sh - height) / 2
+        self.geometry(f'{width}x{height}+{int(x)}+{int(y)}')
 
-        # Ícone Seguro
-        icon_path = resource_path("icone_perfeito.ico")
-        if os.path.exists(icon_path):
-            self.iconbitmap(icon_path)
-            
-        # Forçar foco e taskbar (Hack para overrideredirect)
-        self.after(10, self.force_taskbar)
+        # Ícone
+        icon_file = resource_path("icone_perfeito.ico")
+        if os.path.exists(icon_file):
+            self.iconbitmap(icon_file)
 
-        self.main_frame = ctk.CTkFrame(self, fg_color=COLOR_BG, corner_radius=0)
-        self.main_frame.pack(fill="both", expand=True, padx=2, pady=2)
-        
-        # Borda Neon Fina ao redor da janela
-        self.main_frame.configure(border_width=1, border_color="#1a1a1a")
+        # Container Principal
+        self.frame = ctk.CTkFrame(self, fg_color=COLOR_BG, corner_radius=0, border_width=1, border_color="#1a1a1a")
+        self.frame.pack(fill="both", expand=True)
 
-        # --- CANVAS WAVEFORM ---
-        self.canvas_h = 120
-        self.canvas = tk.Canvas(self.main_frame, height=self.canvas_h, bg=COLOR_BG, highlightthickness=0)
-        self.canvas.pack(fill="x", pady=(20, 10))
+        # --- WAVEFORM ANIMADA (Centralizada Matemática) ---
+        self.canvas = tk.Canvas(self.frame, height=120, bg=COLOR_BG, highlightthickness=0)
+        self.canvas.pack(fill="x", pady=(50, 20))
         
         self.bars = []
-        self.num_bars = 16
-        bar_width = 8
-        gap = 6
-        total_w = (self.num_bars * bar_width) + ((self.num_bars - 1) * gap)
-        start_x = (480 - total_w) / 2
+        num_bars, bar_w, gap = 20, 6, 4
+        total_w = (num_bars * bar_w) + ((num_bars - 1) * gap)
+        start_x = (550 - total_w) / 2
         
-        for i in range(self.num_bars):
-            x0 = start_x + i * (bar_width + gap)
-            y0 = self.canvas_h / 2
-            # Efeito Glow simulado com cores
-            rect = self.canvas.create_rectangle(x0, y0, x0 + bar_width, y0, fill=COLOR_ACCENT, outline="")
+        for i in range(num_bars):
+            x0 = start_x + i * (bar_w + gap)
+            rect = self.canvas.create_rectangle(x0, 60, x0 + bar_w, 60, fill=COLOR_ACCENT, outline="")
             self.bars.append(rect)
+
+        # --- TEXTOS ---
+        self.lbl_brand = ctk.CTkLabel(self.frame, text="AUDIO ORGANIZER", font=("Montserrat", 28, "bold"), text_color="white")
+        self.lbl_brand.pack()
+        
+        self.lbl_edition = ctk.CTkLabel(self.frame, text="PROFESSIONAL EDITION v2.5", font=("Consolas", 10, "bold"), text_color=COLOR_ACCENT)
+        self.lbl_edition.pack(pady=(0, 30))
+
+        self.lbl_status = ctk.CTkLabel(self.frame, text="Iniciando motores de IA...", font=("Consolas", 11), text_color="#555")
+        self.lbl_status.pack()
+
+        self.progress = ctk.CTkProgressBar(self.frame, width=400, height=3, progress_color=COLOR_ACCENT, fg_color="#111", border_width=0)
+        self.progress.pack(pady=20)
+        self.progress.set(0)
+
+        # Estados de Carregamento Dinâmicos
+        self.loading_msgs = [
+            "Sincronizando núcleos de processamento neural...",
+            "Calibrando algoritmos de reconhecimento de frequência...",
+            "Carregando base de dados de gêneros musicais...",
+            "Analisando integridade da biblioteca local...",
+            "Estabelecendo conexão segura com o servidor..."
+        ]
 
         self.animating = True
         self.animate_waves()
-
-        # --- LOGO ---
-        self.title_frame = ctk.CTkFrame(self.main_frame, fg_color=COLOR_BG)
-        self.title_frame.pack(pady=(5, 25))
-
-        self.lbl_audio = ctk.CTkLabel(self.title_frame, text="AUDIO", 
-                                      font=("Montserrat Light", 26), text_color="#cccccc")
-        self.lbl_audio.pack(side="left")
-
-        self.lbl_org = ctk.CTkLabel(self.title_frame, text="ORGANIZER", 
-                                    font=("Montserrat", 26, "bold"), text_color="white")
-        self.lbl_org.pack(side="left", padx=(5, 0))
+        self.cycle_messages()
         
-        # REMOVIDO O ARGUMENTO 'spacing=2' QUE CAUSAVA O ERRO
-        self.lbl_edition = ctk.CTkLabel(self.main_frame, text="PROFESSIONAL EDITION v2.5", 
-                                        font=("Consolas", 9, "bold"), text_color=COLOR_ACCENT)
-        self.lbl_edition.pack(pady=(0, 20))
-
-        # --- PROGRESSO & STATUS ---
-        self.status_msgs = [
-            "Sincronizando núcleos de processamento...",
-            "Calibrando algoritmos espectrais...",
-            "Carregando base de metadados...",
-            "Estabelecendo conexão segura..."
-        ]
-        self.current_msg_idx = 0
-        
-        self.lbl_status = ctk.CTkLabel(self.main_frame, text=self.status_msgs[0], 
-                                       font=("Consolas", 10), text_color="gray")
-        self.lbl_status.pack(pady=(0, 5))
-
-        self.progress = ctk.CTkProgressBar(self.main_frame, width=400, height=2, 
-                                           progress_color=COLOR_ACCENT, fg_color="#111", border_width=0)
-        self.progress.pack(pady=(0, 20))
-        self.progress.set(0)
-
-        # Timer para alternar frases
-        self.after(2000, self.cycle_status)
-        self.after(1000, self.start_updater)
-
-    def force_taskbar(self):
-        # Pequeno hack para garantir que apareça na barra se possível
-        try:
-            self.wm_attributes("-topmost", 1)
-            self.wm_attributes("-topmost", 0)
-        except: pass
-
-    def cycle_status(self):
-        if not self.animating: return
-        self.current_msg_idx = (self.current_msg_idx + 1) % len(self.status_msgs)
-        self.lbl_status.configure(text=self.status_msgs[self.current_msg_idx])
-        self.after(2500, self.cycle_status)
+        # Iniciar Lógica
+        self.after(500, self.start_bootstrap)
 
     def animate_waves(self):
         if not self.animating: return
-        center_y = self.canvas_h / 2
-        
-        for i, rect in enumerate(self.bars):
-            # Cria um padrão de onda senoidal + random
-            import math
-            t = time.time() * 5
-            base_h = 20
-            wave = math.sin(t + i*0.5) * 30 
-            noise = random.randint(-15, 15)
-            height = max(4, base_h + abs(wave) + noise)
-            
-            coords = self.canvas.coords(rect)
-            x0, _, x1, _ = coords
-            
-            # Gradiente "Fake" mudando a cor baseado na altura
-            color = COLOR_ACCENT if height > 40 else COLOR_ACCENT_DIM
+        for rect in self.bars:
+            h = random.randint(10, 90)
+            x0, _, x1, _ = self.canvas.coords(rect)
+            self.canvas.coords(rect, x0, 60 - h/2, x1, 60 + h/2)
+            # Efeito de cor baseado na altura
+            color = COLOR_ACCENT if h > 40 else COLOR_ACCENT_DIM
             self.canvas.itemconfig(rect, fill=color)
-            self.canvas.coords(rect, x0, center_y - height/2, x1, center_y + height/2)
-            
-        self.after(50, self.animate_waves)
+        self.after(70, self.animate_waves)
 
-    def update_ui(self, text, progress_val):
-        # A atualização de texto aqui sobrescreve o ciclo automático apenas se crítico
-        if progress_val >= 0.9:
-            self.lbl_status.configure(text=text)
-        self.progress.set(progress_val)
-        self.update()
+    def cycle_messages(self):
+        if not self.animating: return
+        self.lbl_status.configure(text=random.choice(self.loading_msgs))
+        self.after(2200, self.cycle_messages)
 
-    def start_updater(self):
-        thread = threading.Thread(target=self.run_logic)
-        thread.start()
+    def start_bootstrap(self):
+        threading.Thread(target=self.bootstrap_logic, daemon=True).start()
 
-    def get_remote_version(self):
+    def bootstrap_logic(self):
         try:
-            r = requests.get(VERSION_URL, timeout=5)
-            if r.status_code == 200: return r.text.strip()
-        except: pass
-        return None
+            self.progress.set(0.2)
+            time.sleep(1) # Valor estético
 
-    def get_local_version(self):
-        if os.path.exists(LOCAL_VERSION):
-            with open(LOCAL_VERSION, "r") as f: return f.read().strip()
-        return "0.0"
+            # Verificar Versão
+            remote = None
+            try:
+                r = requests.get(VERSION_URL, timeout=5)
+                if r.status_code == 200: remote = r.text.strip()
+            except: pass
 
-    def run_logic(self):
-        try:
-            time.sleep(1) # Efeito dramático inicial
-
-            remote = self.get_remote_version()
-            local = self.get_local_version()
-            
-            self.update_ui("Verificando integridade neural...", 0.4)
-            time.sleep(0.8)
+            self.progress.set(0.5)
+            local = "0.0"
+            if os.path.exists(LOCAL_VERSION):
+                with open(LOCAL_VERSION, "r") as f: local = f.read().strip()
 
             if remote and remote != local:
-                self.lbl_status.configure(text=f"Baixando patch v{remote}...")
-                self.update_ui(f"Baixando patch v{remote}...", 0.6)
-                try:
-                    r = requests.get(SCRIPT_URL)
-                    if r.status_code == 200:
-                        with open(LOCAL_SCRIPT, "wb") as f:
-                            f.write(r.content)
-                        with open(LOCAL_VERSION, "w") as f:
-                            f.write(remote)
-                    else:
-                        pass # Falha silenciosa, usa cache
-                except:
-                    pass
-            
-            self.update_ui("Iniciando Core do Sistema...", 1.0)
-            time.sleep(1.0)
-            
+                self.lbl_status.configure(text=f"Instalando Patch {remote}...")
+                r_script = requests.get(SCRIPT_URL)
+                if r_script.status_code == 200:
+                    with open(LOCAL_SCRIPT, "wb") as f: f.write(r_script.content)
+                    with open(LOCAL_VERSION, "w") as f: f.write(remote)
+                self.progress.set(0.8)
+
+            self.progress.set(1.0)
+            self.lbl_status.configure(text="Sincronização Completa!")
+            time.sleep(0.8)
             self.animating = False
             self.quit()
-        except Exception as e:
-            log_fatal_error(e)
+        except:
             self.quit()
 
 def main():
-    try:
-        app = CyberSplash()
-        app.mainloop()
-        app.destroy()
-    except Exception as e:
-        log_fatal_error(e)
-        return
+    splash = CyberSplash()
+    splash.mainloop()
+    splash.destroy()
 
     if os.path.exists(LOCAL_SCRIPT):
-        try:
-            with open(LOCAL_SCRIPT, "r", encoding="utf-8") as f:
-                code = f.read()
-            scope = globals().copy()
-            scope['__name__'] = '__launcher__'
-            
-            exec(code, scope)
-            
-            if "main" in scope:
-                scope["main"]()
-            elif "organizar" in scope:
-                scope["organizar"]()
-                
-        except Exception as e:
-            log_fatal_error(e)
-            try:
-                root = tk.Tk()
-                root.withdraw()
-                tk.messagebox.showerror("Erro Fatal", f"O App falhou ao iniciar.\nVerifique 'ERRO_LAUNCHER.txt'\nErro: {e}")
-            except: pass
-    else:
-        # Fallback se não tiver internet na primeira vez e nem cache
-        tk.messagebox.showerror("Erro de Conexão", "Não foi possível baixar o núcleo do sistema pela primeira vez.")
+        with open(LOCAL_SCRIPT, "r", encoding="utf-8") as f:
+            code = f.read()
+        
+        # Executar o Core com todas as dependências necessárias injetadas
+        scope = {
+            '__name__': '__main__',
+            'ctk': ctk,
+            'ctypes': ctypes,
+            'os': os,
+            'sys': sys,
+            'Image': Image,
+            'ImageTk': ImageTk
+        }
+        exec(code, scope)
 
 if __name__ == "__main__":
     main()
