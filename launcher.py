@@ -34,6 +34,14 @@ def log_fatal_error(e):
     with open(log_path, "w") as f:
         f.write(f"ERRO FATAL NO LAUNCHER:\n{str(e)}\n\nDETALHES:\n{traceback.format_exc()}")
 
+def resource_path(relative_path):
+    """ Retorna o caminho absoluto, funcionando para dev e para o PyInstaller """
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 GITHUB_USER = "tgriebell"
 REPO_NAME = "audio-organizer-server"
 BRANCH = "main"
@@ -48,14 +56,6 @@ if not os.path.exists(TEMP_DIR):
 
 LOCAL_SCRIPT = os.path.join(TEMP_DIR, "core_v2.py")
 LOCAL_VERSION = os.path.join(TEMP_DIR, "version.txt")
-
-def resource_path(relative_path):
-    """ Retorna o caminho absoluto, funcionando para dev e para o PyInstaller """
-    try:
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
-    return os.path.join(base_path, relative_path)
 
 # PALETA CYBER-DARK
 COLOR_BG = "#050505"
@@ -83,8 +83,7 @@ class CyberSplash(ctk.CTk):
         icon_path = resource_path("icone_perfeito.ico")
         if os.path.exists(icon_path):
             self.iconbitmap(icon_path)
-
-
+            
         # Forçar foco e taskbar (Hack para overrideredirect)
         self.after(10, self.force_taskbar)
 
@@ -128,8 +127,9 @@ class CyberSplash(ctk.CTk):
                                     font=("Montserrat", 26, "bold"), text_color="white")
         self.lbl_org.pack(side="left", padx=(5, 0))
         
+        # REMOVIDO O ARGUMENTO 'spacing=2' QUE CAUSAVA O ERRO
         self.lbl_edition = ctk.CTkLabel(self.main_frame, text="PROFESSIONAL EDITION v2.5", 
-                                        font=("Consolas", 9, "bold"), text_color=COLOR_ACCENT, spacing=2)
+                                        font=("Consolas", 9, "bold"), text_color=COLOR_ACCENT)
         self.lbl_edition.pack(pady=(0, 20))
 
         # --- PROGRESSO & STATUS ---
