@@ -67,33 +67,34 @@ class CyberSplash(ctk.CTk):
         self.main_frame = ctk.CTkFrame(self, fg_color=COLOR_BG, corner_radius=0, border_width=1, border_color="#111")
         self.main_frame.pack(fill="both", expand=True)
 
-        # --- CANVAS DE ONDAS (Física de Áudio) ---
-        self.canvas = tk.Canvas(self.main_frame, height=150, bg=COLOR_BG, highlightthickness=0)
-        self.canvas.place(relx=0.5, rely=0.4, anchor="center", relwidth=0.9)
+        # --- CANVAS DE ONDAS (Física de Áudio Centralizada) ---
+        self.canvas_h = 150
+        self.canvas = tk.Canvas(self.main_frame, height=self.canvas_h, bg=COLOR_BG, highlightthickness=0)
+        self.canvas.place(relx=0.5, rely=0.4, anchor="center", relwidth=1.0)
         
         self.bars = []
         self.num_bars = 24
         bar_w, gap = 6, 4
         total_w = (self.num_bars * bar_w) + ((self.num_bars - 1) * gap)
-        start_x = (540 - total_w) / 2
+        # Cálculo exato do centro do canvas
+        start_x = (600 - total_w) / 2
         
         for i in range(self.num_bars):
             x0 = start_x + i * (bar_w + gap)
-            # Gradiente de cor nas barras
             rect = self.canvas.create_rectangle(x0, 75, x0 + bar_w, 75, fill=COLOR_ACCENT, outline="")
             self.bars.append(rect)
 
         # --- TIPOGRAFIA PREMIUM ---
-        self.lbl_audio = ctk.CTkLabel(self.main_frame, text="AUDIO", font=("Inter Light", 32), text_color="#555")
+        self.lbl_audio = ctk.CTkLabel(self.main_frame, text="AUDIO", font=("Segoe UI Light", 32), text_color="#555")
         self.lbl_audio.place(relx=0.43, rely=0.65, anchor="e")
 
-        self.lbl_org = ctk.CTkLabel(self.main_frame, text="ORGANIZER", font=("Inter", 32, "bold"), text_color="white")
+        self.lbl_org = ctk.CTkLabel(self.main_frame, text="ORGANIZER", font=("Segoe UI", 32, "bold"), text_color="white")
         self.lbl_org.place(relx=0.44, rely=0.65, anchor="w")
         
-        self.lbl_status = ctk.CTkLabel(self.main_frame, text="CARREGANDO MÓDULOS DE IA...", font=("Consolas", 9), text_color=COLOR_ACCENT)
+        self.lbl_status = ctk.CTkLabel(self.main_frame, text="SYNCHRONIZING SYSTEM CORE...", font=("Consolas", 9), text_color=COLOR_ACCENT)
         self.lbl_status.place(relx=0.5, rely=0.75, anchor="center")
 
-        self.progress = ctk.CTkProgressBar(self.main_frame, width=300, height=2, progress_color=COLOR_ACCENT, fg_color="#0a0a0a")
+        self.progress = ctk.CTkProgressBar(self.main_frame, width=350, height=2, progress_color=COLOR_ACCENT, fg_color="#0a0a0a")
         self.progress.place(relx=0.5, rely=0.85, anchor="center")
         self.progress.set(0)
 
@@ -107,14 +108,20 @@ class CyberSplash(ctk.CTk):
 
     def force_taskbar(self):
         # Hack Win32 para forçar ícone em janela frameless
-        GWL_EXSTYLE = -20
-        WS_EX_APPWINDOW = 0x00040000
-        WS_EX_TOOLWINDOW = 0x00000080
-        hwnd = ctypes.windll.user32.GetParent(self.winfo_id())
-        style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
-        style = style & ~WS_EX_TOOLWINDOW
-        style = style | WS_EX_APPWINDOW
-        ctypes.windll.user32.SetWindowLongW(hwnd, GWL_EXSTYLE, style)
+        try:
+            GWL_EXSTYLE = -20
+            WS_EX_APPWINDOW = 0x00040000
+            WS_EX_TOOLWINDOW = 0x00000080
+            hwnd = ctypes.windll.user32.GetParent(self.winfo_id())
+            style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
+            style = style & ~WS_EX_TOOLWINDOW
+            style = style | WS_EX_APPWINDOW
+            ctypes.windll.user32.SetWindowLongW(hwnd, GWL_EXSTYLE, style)
+            
+            # Re-aplicar para forçar atualização
+            self.withdraw()
+            self.after(10, self.deiconify)
+        except: pass
 
     def fade_in(self):
         alpha = self.attributes("-alpha")
@@ -148,7 +155,6 @@ class CyberSplash(ctk.CTk):
     def run_updater(self):
         try:
             self.progress.set(0.3)
-            # Simulação de verificação
             time.sleep(1)
             self.progress.set(0.7)
             time.sleep(0.5)
@@ -167,12 +173,11 @@ def main():
         with open(LOCAL_SCRIPT, "r", encoding="utf-8") as f:
             code = f.read()
         
-        # Injetar Dependências e Rodar o App Principal
         import mutagen, pygame, PIL, requests
         scope = {
             '__name__': '__main__', 'ctk': ctk, 'ctypes': ctypes, 'os': os, 'sys': sys,
             'mutagen': mutagen, 'pygame': pygame, 'PIL': PIL, 'requests': requests,
-            'Image': Image, 'ImageTk': ImageTk
+            'Image': Image, 'ImageTk': ImageTk, 'math': math
         }
         exec(code, scope)
 
