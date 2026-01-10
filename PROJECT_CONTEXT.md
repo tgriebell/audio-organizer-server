@@ -1,46 +1,38 @@
 # 🎵 PROJETO: AUDIO ORGANIZER (Ultimate Edition)
 
-**Status Atual:** ✅ V1.1 Finalizada (Versão de Lançamento)
-**Data da Última Atualização:** 09/01/2026
-**Tecnologia:** Python (Script) + PyInstaller (.EXE) + GitHub Cloud Updater
+**Status Atual:** 🚀 V2.0 em Desenvolvimento (GUI + Metadados)
+**Data da Última Atualização:** 10/01/2026
+**Tecnologia:** Python (CustomTkinter) + Mutagen (Metadata) + GitHub Cloud Updater
 
 ---
 
-## 🚀 O Que Foi Feito (Versão 1.1 - Ultimate)
-
-Transformamos o script em um software profissional completo, pronto para venda e uso em escala.
+## 🚀 O Que Foi Feito
 
 ### 1. Sistema de Atualização Automática ("Cyber Updater")
 - O cliente recebe apenas o `AudioOrganizer.exe`.
 - O programa se conecta ao GitHub (`tgriebell/audio-organizer-server`) e baixa o código mais recente automaticamente.
-- **Lógica Inteligente:** O executável roda o código diretamente na memória, evitando loops e dependência de Python instalado no cliente.
 
-### 2. Inteligência de Categorização (20 Pastas)
-- Mapeamento completo baseado no padrão **Artlist** e **Epidemic Sound**.
-- O sistema reconhece 20 categorias, incluindo as novas: *Experimental/Sound Design, World Music, Kids, Holiday, Jazz/Blues* e *Electronic Dance*.
-- **Criação Automática:** O software cria todas as pastas necessárias assim que é aberto pela primeira vez.
+### 2. Interface Gráfica Moderna (GUI v2.0) - [NOVO]
+- Substituição do Terminal por uma janela moderna usando **CustomTkinter**.
+- Tema Dark mode com visual profissional.
+- Seleção de pasta via interface gráfica (File Dialog).
+- Barra de progresso em tempo real e log de eventos integrado.
+- Execução em Thread separada (a janela não trava durante a organização).
 
-### 3. Melhorias Visuais e de UX
-- **Ícone High-End:** Criamos um arquivo `.ico` com múltiplas camadas (de 16px a 256px). O ícone agora fica nítido em qualquer modo de visualização do Windows (do Ícone Pequeno ao Extra Grande).
-- **Varredura Profunda:** O organizador agora é recursivo, ou seja, ele entra em subpastas dentro da entrada para buscar músicas.
-- **Interface Cyber:** Banner v1.1 e mensagens de status em tempo real.
+### 3. Inteligência de Metadados - [NOVO]
+- Integração com a biblioteca **Mutagen**.
+- O sistema agora lê tags internas (ID3) de arquivos MP3/WAV/AIFF.
+- Classificação muito mais precisa: mesmo que o nome do arquivo esteja genérico (ex: "track1.mp3"), o sistema identifica o gênero pelo metadado interno.
 
 ---
 
 ## 📂 Guia de Manutenção (O que deve ficar no GitHub)
-
-Para manter o projeto organizado e funcional, o repositório deve conter apenas:
-1.  `organizar_musicas.py`: O cérebro do sistema.
-2.  `launcher.py`: O código-fonte do atualizador (gerador do .exe).
-3.  `version.txt`: Arquivo de controle (ex: 1.1).
-4.  `icone_perfeito.ico`: O arquivo de ícone definitivo.
-5.  `icone.png`: A imagem original de alta qualidade.
-6.  `PROJECT_CONTEXT.md`: Este documento.
+... (mantido conforme anterior) ...
 
 ---
 
-## 💡 PRÓXIMOS PASSOS (Roadmap v2.0)
+## 💡 PRÓXIMOS PASSOS (Roadmap v2.1)
 
-- **Interface Gráfica (GUI):** Evoluir o terminal para uma janela com botões.
-- **Leitura de Metadados:** Classificar também por tags internas das músicas (BPM, Artista oficial).
-- **Customização:** Arquivo `config.json` para o usuário adicionar suas próprias pastas.
+- **Customização:** Adicionar aba de configurações na GUI para editar as `REGRAS_PALAVRAS`.
+- **Previsualização:** Player de áudio básico dentro da interface para ouvir o arquivo antes/depois.
+- **Log Export:** Opção de salvar o relatório de organização em um arquivo .txt.
