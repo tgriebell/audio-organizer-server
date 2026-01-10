@@ -14,28 +14,34 @@ from PIL import Image, ImageTk
 from mutagen import File as MutagenFile
 
 # ==============================================================================
-# ENGINE DE SISTEMA
+# ENGINE DE SISTEMA (PATH RESOLUTION)
 # ==============================================================================
 try:
     myappid = 'tgriebell.audioorganizer.neural.v2.9'
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 except: pass
 
+def get_base_path():
+    # Retorna o diretório onde o EXE ou o Script está localizado
+    if getattr(sys, 'frozen', False):
+        return os.path.dirname(sys.executable)
+    return os.path.dirname(os.path.abspath(__file__))
+
 # ==============================================================================
-# DESIGN SYSTEM (CYBER NEON BLUE & GREEN)
+# DESIGN SYSTEM (NEURAL GRADIENT VIBE)
 # ==============================================================================
-COLOR_BG = "#02040a"        # Azul Marinho Profundo
-COLOR_SIDEBAR = "#050a15"    # Azul Escuro
-COLOR_CARD = "#081020"       # Azul Deck
+COLOR_BG_DARK = "#01040a"
+COLOR_NEON_BLUE = "#00ccff"
 COLOR_ACCENT = "#00ff66"     # Verde Neon
-COLOR_NEON_BLUE = "#0066ff"  # Azul Neon
-COLOR_BORDER = "#102040"
+COLOR_SIDEBAR = "#050a15"
+COLOR_CARD = "#081020"
+COLOR_BORDER = "#102540"
 COLOR_STATUS = "#8899aa"
 
 # ==============================================================================
 # CONFIGURAÇÃO DE REGRAS
 # ==============================================================================
-PASTA_ENTRADA = "_ENTRADA_DE_MUSICAS"
+PASTA_ENTRADA_NOME = "_ENTRADA_DE_MUSICAS"
 
 REGRAS_PALAVRAS = {
     "01_Alta_Energia_Impacto_Esportes_Carros_Acao": ["powerful", "exciting", "rock", "metal", "sport", "action", "extreme", "energy", "stomp", "drums"],
@@ -83,7 +89,7 @@ class NeuralCard(ctk.CTkFrame):
         self.name_lbl = ctk.CTkLabel(self, text=self.filename[:65], font=("Segoe UI", 14, "bold"), text_color="white")
         self.name_lbl.grid(row=0, column=1, sticky="w", pady=(15, 0))
         
-        sub_info = f"IN: ...\\{os.path.dirname(rel_path)}" if os.path.dirname(rel_path) else "ROOT DIRECTORY"
+        sub_info = f"SOURCE: ...\\{os.path.dirname(rel_path)}" if os.path.dirname(rel_path) else "SOURCE: ROOT"
         self.info_lbl = ctk.CTkLabel(self, text=f"NEURAL OBJECT // {sub_info}", font=("Consolas", 9), text_color=COLOR_STATUS)
         self.info_lbl.grid(row=1, column=1, sticky="w", pady=(0, 15))
 
@@ -91,7 +97,7 @@ class NeuralCard(ctk.CTkFrame):
         self.bind("<Leave>", lambda e: self.configure(border_color=COLOR_BORDER, fg_color=COLOR_CARD))
 
 # ==============================================================================
-# SPLASH SCREEN (FIXED ALIGNMENT)
+# SPLASH SCREEN (NEON GRADIENT ALIVE)
 # ==============================================================================
 
 class NeuralSplash(ctk.CTk):
@@ -99,52 +105,53 @@ class NeuralSplash(ctk.CTk):
         super().__init__()
         self.on_finish = on_finish
         self.overrideredirect(True)
-        self.configure(fg_color=COLOR_BG)
+        self.configure(fg_color=COLOR_BG_DARK)
         
         w, h = 600, 480
         sw, sh = self.winfo_screenwidth(), self.winfo_screenheight()
         self.geometry(f'{w}x{h}+{int((sw-w)/2)}+{int((sh-h)/2)}')
 
-        # Layout Centralizado
-        self.main_frame = ctk.CTkFrame(self, fg_color=COLOR_BG, corner_radius=0, border_width=1, border_color=COLOR_NEON_BLUE)
-        self.main_frame.pack(fill="both", expand=True)
+        # Fundo Degradê Neon
+        self.canvas_bg = tk.Canvas(self, width=600, height=480, bg=COLOR_BG_DARK, highlightthickness=0)
+        self.canvas_bg.pack(fill="both", expand=True)
+        self.draw_neon_gradient()
 
-        # Waveform Canvas - Centralização Absoluta
-        self.canvas = tk.Canvas(self.main_frame, height=120, bg=COLOR_BG, highlightthickness=0)
-        self.canvas.place(relx=0.5, y=140, anchor="center", width=500)
+        # Waveform Absolute Center
+        self.wave_canvas = tk.Canvas(self, height=120, bg=COLOR_BG_DARK, highlightthickness=0)
+        self.wave_canvas.place(relx=0.5, y=140, anchor="center", width=500)
         
         self.bars = []; self.glows = []
         num_bars, bar_w, gap = 30, 4, 6
-        total_w = (num_bars * bar_w) + ((num_bars - 1) * gap)
-        start_x = (500 - total_w) / 2
+        start_x = (500 - (num_bars * (bar_w + gap))) / 2
         
         for i in range(num_bars):
             x0 = start_x + i * (bar_w + gap)
-            glow = self.canvas.create_rectangle(x0-1, 60, x0+bar_w+1, 60, fill="#003322", outline="")
-            rect = self.canvas.create_rectangle(x0, 60, x0+bar_w, 60, fill=COLOR_ACCENT, outline="")
+            glow = self.wave_canvas.create_rectangle(x0-1, 60, x0+bar_w+1, 60, fill="#003322", outline="")
+            rect = self.wave_canvas.create_rectangle(x0, 60, x0+bar_w, 60, fill=COLOR_ACCENT, outline="")
             self.bars.append(rect); self.glows.append(glow)
 
-        # Título - Ajustado para ficar logo abaixo da onda
-        self.lbl_title = ctk.CTkFrame(self.main_frame, fg_color="transparent")
+        self.lbl_title = ctk.CTkFrame(self, fg_color="transparent")
         self.lbl_title.place(relx=0.5, y=240, anchor="center")
         ctk.CTkLabel(self.lbl_title, text="AUDIO", font=("Segoe UI Light", 40), text_color="white").pack(side="left")
         ctk.CTkLabel(self.lbl_title, text=" ORGANIZER", font=("Segoe UI", 40, "bold"), text_color="white").pack(side="left")
 
-        ctk.CTkLabel(self.main_frame, text="by Thiago Griebel • TODOS OS DIREITOS RESERVADOS", font=("Segoe UI", 9, "bold"), text_color=COLOR_NEON_BLUE).place(relx=0.5, y=285, anchor="center")
+        ctk.CTkLabel(self, text="by Thiago Griebel • TODOS OS DIREITOS RESERVADOS", font=("Segoe UI", 9, "bold"), text_color=COLOR_NEON_BLUE).place(relx=0.5, y=285, anchor="center")
         
-        self.lbl_sub = ctk.CTkLabel(self.main_frame, text="NEURAL ENGINE EDITION v2.9", font=("Consolas", 11, "bold"), text_color=COLOR_ACCENT)
-        self.lbl_sub.place(relx=0.5, y=320, anchor="center")
-
-        self.lbl_status = ctk.CTkLabel(self.main_frame, text="READY TO SCAN", font=("Consolas", 10), text_color=COLOR_STATUS)
+        self.lbl_status = ctk.CTkLabel(self, text="NEURAL BOOTING...", font=("Consolas", 10), text_color=COLOR_STATUS)
         self.lbl_status.place(relx=0.5, y=380, anchor="center")
 
-        self.prog_canvas = tk.Canvas(self.main_frame, width=350, height=4, bg="#0a1530", highlightthickness=0)
-        self.prog_canvas.place(relx=0.5, y=420, anchor="center")
-        self.prog_fill = self.prog_canvas.create_rectangle(0, 0, 0, 4, fill=COLOR_ACCENT, outline="")
-
-        self.animating = True; self.phase = 0; self.progress_val = 0
+        self.animating = True; self.phase = 0
         self.animate_elements()
         self.start_boot()
+
+    def draw_neon_gradient(self):
+        # Simula degradê neon suave
+        for i in range(480):
+            r = int(1 + (4 * i/480))
+            g = int(8 + (22 * i/480))
+            b = int(22 - (8 * i/480))
+            color = f"#{r:02x}{g:02x}{b:02x}"
+            self.canvas_bg.create_line(0, i, 600, i, fill=color)
 
     def animate_elements(self):
         if not self.animating: return
@@ -153,22 +160,16 @@ class NeuralSplash(ctk.CTk):
             dist = abs(i - len(self.bars)/2) / (len(self.bars)/2)
             att = math.cos(dist * math.pi / 2)
             h = (math.sin(self.phase + i * 0.3) * 45 + 50) * att
-            self.canvas.coords(rect, self.canvas.coords(rect)[0], 60 - h/2, self.canvas.coords(rect)[2], 60 + h/2)
-            self.canvas.coords(self.glows[i], self.canvas.coords(rect)[0]-2, 60 - h/2 - 2, self.canvas.coords(rect)[2]+2, 60 + h/2 + 2)
-
-        target_w = 350 * self.progress_val
-        curr_w = self.prog_canvas.coords(self.prog_fill)[2]
-        self.prog_canvas.coords(self.prog_fill, 0, 0, curr_w + (target_w - curr_w) * 0.1, 4)
+            try:
+                self.wave_canvas.coords(rect, self.wave_canvas.coords(rect)[0], 60 - h/2, self.wave_canvas.coords(rect)[2], 60 + h/2)
+                self.wave_canvas.coords(self.glows[i], self.wave_canvas.coords(rect)[0]-2, 60 - h/2 - 2, self.wave_canvas.coords(rect)[2]+2, 60 + h/2 + 2)
+            except: pass
         self.after(30, self.animate_elements)
 
     def start_boot(self):
         def run():
-            msgs = ["CORE INITIALIZATION...", "NEURAL MAPPING...", "UI SYNC...", "SYSTEM ONLINE"]
-            for i, m in enumerate(msgs):
-                self.lbl_status.configure(text=m)
-                self.progress_val = (i+1)/len(msgs)
-                time.sleep(0.7)
-            self.animating = False; self.after(300, self.finish)
+            time.sleep(1.8)
+            self.animating = False; self.after(200, self.finish)
         threading.Thread(target=run, daemon=True).start()
 
     def finish(self):
@@ -187,39 +188,50 @@ class AudioOrganizerApp(ctk.CTk):
         w, h = 1300, 820
         sw, sh = self.winfo_screenwidth(), self.winfo_screenheight()
         self.geometry(f"{w}x{h}+{int((sw-w)/2)}+{int((sh-h)/2)}")
-        self.configure(fg_color=COLOR_BG)
+        self.configure(fg_color=COLOR_BG_DARK)
         self.setup_ui()
         self.fade_in()
         
-        self.current_root = ""
+        self.current_root = get_base_path() # Fixa na pasta do EXE
         self.file_cards = []
+        
+        # Auto-Scan Inicial na inicialização
+        self.after(800, self.auto_initialize)
 
     def fade_in(self):
         a = self.attributes("-alpha")
         if a < 1.0: self.attributes("-alpha", a + 0.1); self.after(20, self.fade_in)
 
     def setup_ui(self):
-        # Header Pro
+        # Top Bar
         self.top = ctk.CTkFrame(self, fg_color=COLOR_SIDEBAR, height=70, corner_radius=0)
         self.top.pack(fill="x")
         self.top.bind("<Button-1>", self.start_move)
         self.top.bind("<B1-Motion>", self.do_move)
-        
-        ctk.CTkLabel(self.top, text="  ◈  AUDIO ORGANIZER NEURAL v2.9", font=("Consolas", 12, "bold"), text_color=COLOR_NEON_BLUE).pack(side="left", padx=30)
+        ctk.CTkLabel(self.top, text="  ◈  AUDIO ORGANIZER PRO  //  NEURAL ENGINE v2.9", font=("Consolas", 11, "bold"), text_color=COLOR_NEON_BLUE).pack(side="left", padx=30)
         ctk.CTkButton(self.top, text="✕", width=70, height=70, fg_color="transparent", hover_color="#c42b1c", corner_radius=0, command=self.destroy).pack(side="right")
 
         self.body = ctk.CTkFrame(self, fg_color="transparent")
         self.body.pack(fill="both", expand=True, padx=30, pady=30)
 
-        # Sidebar Simplificada
-        self.side = ctk.CTkFrame(self.body, fg_color=COLOR_SIDEBAR, width=280, corner_radius=25, border_width=1, border_color=COLOR_BORDER)
+        # Sidebar (Results Panel)
+        self.side = ctk.CTkFrame(self.body, fg_color=COLOR_SIDEBAR, width=320, corner_radius=25, border_width=1, border_color=COLOR_BORDER)
         self.side.pack(side="left", fill="y", padx=(0, 30))
         self.side.pack_propagate(False)
         
-        ctk.CTkLabel(self.side, text="AUDIO", font=("Segoe UI Light", 32), text_color="white").pack(pady=(60, 0))
-        ctk.CTkLabel(self.side, text="ORGANIZER", font=("Segoe UI", 24, "bold"), text_color=COLOR_ACCENT).pack()
+        ctk.CTkLabel(self.side, text="AUDIO", font=("Segoe UI Light", 28), text_color="white").pack(pady=(50, 0))
+        ctk.CTkLabel(self.side, text="ORGANIZER", font=("Segoe UI", 28, "bold"), text_color=COLOR_ACCENT).pack()
+
+        # Result Section
+        self.res_frame = ctk.CTkFrame(self.side, fg_color="#08101a", corner_radius=20, border_width=1, border_color="#102035")
+        self.res_frame.pack(fill="both", expand=True, padx=25, pady=(40, 25))
         
-        ctk.CTkLabel(self.side, text="SYSTEM STATUS: ONLINE", font=("Consolas", 10), text_color="#334466").pack(side="bottom", pady=40)
+        ctk.CTkLabel(self.res_frame, text="NEURAL RESULTS", font=("Consolas", 11, "bold"), text_color=COLOR_NEON_BLUE).pack(pady=(20, 10))
+        self.res_info = ctk.CTkLabel(self.res_frame, text="SYSTEM STANDBY", font=("Segoe UI", 13, "bold"), text_color="#445566")
+        self.res_info.pack(pady=15)
+        
+        self.res_stats = ctk.CTkLabel(self.res_frame, text="Objects: 0\nStatus: Waiting...", font=("Consolas", 10), text_color="#334455", justify="left")
+        self.res_stats.pack(pady=10)
 
         # Content
         self.cont = ctk.CTkFrame(self.body, fg_color="transparent")
@@ -227,55 +239,55 @@ class AudioOrganizerApp(ctk.CTk):
         
         self.head = ctk.CTkFrame(self.cont, fg_color="transparent")
         self.head.pack(fill="x", pady=(0, 40))
-        ctk.CTkLabel(self.head, text="Neural Scanning Library", font=("Segoe UI Light", 38), text_color="white").pack(side="left")
-        
-        self.btn_sel = ctk.CTkButton(self.head, text="+ SELECT ROOT FOLDER", fg_color=COLOR_ACCENT, text_color="black", font=("Segoe UI", 14, "bold"), height=55, corner_radius=15, command=self.select_folder)
-        self.btn_sel.pack(side="right")
+        ctk.CTkLabel(self.head, text="Neural Library Scan", font=("Segoe UI Light", 38), text_color="white").pack(side="left")
+        ctk.CTkButton(self.head, text="REFRESH SCAN", fg_color="#152035", text_color="white", font=("Segoe UI", 12), height=45, corner_radius=12, command=self.scan_source).pack(side="right")
 
-        self.scroll = ctk.CTkScrollableFrame(self.cont, fg_color="transparent", scrollbar_button_color=COLOR_BORDER)
+        self.scroll = ctk.CTkScrollableFrame(self.cont, fg_color="transparent")
         self.scroll.pack(fill="both", expand=True)
 
-        # Footer Action
-        self.footer = ctk.CTkFrame(self, fg_color=COLOR_SIDEBAR, height=130, border_width=1, border_color=COLOR_BORDER)
+        # Footer
+        self.footer = ctk.CTkFrame(self, fg_color=COLOR_SIDEBAR, height=140, border_width=1, border_color=COLOR_BORDER)
         self.footer.pack(fill="x")
-        self.btn_run = ctk.CTkButton(self.footer, text="INITIALIZE NEURAL ORGANIZATION", font=("Segoe UI", 20, "bold"), fg_color=COLOR_ACCENT, text_color="black", height=75, width=650, corner_radius=20, command=self.run_process)
+        self.btn_run = ctk.CTkButton(self.footer, text="DEPLOY NEURAL ORGANIZATION", font=("Segoe UI", 20, "bold"), fg_color=COLOR_ACCENT, text_color="black", height=80, width=650, corner_radius=25, command=self.run_process)
         self.btn_run.place(relx=0.5, rely=0.5, anchor="center")
 
     def start_move(self, e): self.x, self.y = e.x, e.y
     def do_move(self, e): self.geometry(f"+{self.winfo_x() + (e.x - self.x)}+{self.winfo_y() + (e.y - self.y)}")
 
-    def select_folder(self):
-        p = filedialog.askdirectory()
-        if not p: return
-        self.current_root = p
-        entrada = os.path.join(p, PASTA_ENTRADA)
-        if not os.path.exists(entrada):
-            os.makedirs(entrada); Toast(self, "Created _ENTRADA_DE_MUSICAS")
-        
+    def auto_initialize(self):
+        # Garante que a pasta de entrada exista no local do EXE
+        entrada = os.path.join(self.current_root, PASTA_ENTRADA_NOME)
+        if not os.path.exists(entrada): os.makedirs(entrada)
+        self.scan_source()
+
+    def scan_source(self):
+        entrada = os.path.join(self.current_root, PASTA_ENTRADA_NOME)
         for w in self.scroll.winfo_children(): w.destroy()
         self.file_cards = []
         found = []
         
-        # SCAN RECURSIVO ABSOLUTO
-        for root, _, files in os.walk(p): # Escaneia a partir da RAIZ selecionada
-            for f in files:
-                if f.lower().endswith(('.mp3', '.wav', '.flac', '.aiff')):
-                    f_full = os.path.join(root, f)
-                    f_rel = os.path.relpath(f_full, p)
-                    found.append((f_full, f_rel))
+        # Scan apenas na pasta _ENTRADA_DE_MUSICAS do EXE
+        if os.path.exists(entrada):
+            for root, _, files in os.walk(entrada):
+                for f in files:
+                    if f.lower().endswith(('.mp3', '.wav', '.flac', '.aiff')):
+                        f_full = os.path.join(root, f)
+                        f_rel = os.path.relpath(f_full, entrada)
+                        found.append((f_full, f_rel))
         
         for f_p, r_p in found:
             card = NeuralCard(self.scroll, f_p, r_p)
             card.pack(fill="x", pady=8, padx=15)
             self.file_cards.append(card)
         
-        Toast(self, f"NEURAL SCAN: {len(found)} OBJECTS LOCATED")
+        self.res_info.configure(text="OBJECTS READY", text_color=COLOR_NEON_BLUE)
+        self.res_stats.configure(text=f"Objects: {len(found)}\nStatus: Scanned", text_color="#8899aa")
 
     def run_process(self):
-        if not self.file_cards: Toast(self, "NO OBJECTS TO ORGANIZE", "#ff3333"); return
-        self.btn_run.configure(state="disabled", text="PROCESSING NEURAL MAPPING...")
+        if not self.file_cards: return
+        self.btn_run.configure(state="disabled", text="DEPLOYING...")
         
-        # Create categories
+        # Cria as pastas apenas se não existirem (exist_ok=True)
         for pasta in REGRAS_PALAVRAS.keys():
             os.makedirs(os.path.join(self.current_root, pasta), exist_ok=True)
         os.makedirs(os.path.join(self.current_root, "08_Outros_Nao_Classificados"), exist_ok=True)
@@ -298,6 +310,7 @@ class AudioOrganizerApp(ctk.CTk):
                         dest = pasta; break
                 
                 try:
+                    # Move para a pasta de categoria na RAIZ do executável
                     shutil.move(orig, os.path.join(self.current_root, dest, name))
                     count += 1
                 except: pass
@@ -305,8 +318,10 @@ class AudioOrganizerApp(ctk.CTk):
         threading.Thread(target=work, daemon=True).start()
 
     def done(self, c):
-        self.btn_run.configure(state="normal", text="INITIALIZE NEURAL ORGANIZATION")
-        Toast(self, f"SUCCESS: {c} OBJECTS REDEPLOYED")
+        self.btn_run.configure(state="normal", text="DEPLOY NEURAL ORGANIZATION")
+        self.res_info.configure(text="DEPLOY SUCCESS", text_color=COLOR_ACCENT)
+        self.res_stats.configure(text=f"Processed: {c}\nStatus: SYNCED", text_color=COLOR_ACCENT)
+        Toast(self, f"SUCCESS: {c} OBJECTS SYNCED")
         for w in self.scroll.winfo_children(): w.destroy()
         self.file_cards = []
 
