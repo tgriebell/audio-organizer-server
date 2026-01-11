@@ -1,7 +1,7 @@
-# PROJECT CONTEXT: AUDIO ORGANIZER - NEURAL ENGINE v3.0
+# PROJECT CONTEXT: AUDIO ORGANIZER - NEURAL ENGINE v3.3
 
 ## 🚀 VISÃO GERAL
-O **AUDIO ORGANIZER** é uma ferramenta de alta performance para videomakers, projetada para automatizar a triagem de bibliotecas de áudio (Artlist, Epidemic, Motion Array) em 20 categorias profissionais utilizando inteligência de reconhecimento de metadados e palavras-chave.
+O **AUDIO ORGANIZER** é uma ferramenta de alta performance para videomakers, projetada para automatizar a triagem de bibliotecas de áudio (Artlist, Epidemic, Motion Array, Envato) em 20 categorias profissionais utilizando um sistema de **Scoring Heurístico** de metadados e análise de palavras-chave.
 
 ---
 
@@ -19,28 +19,31 @@ O sistema opera em um modelo **Auto-Atualizável via GitHub**, permitindo melhor
 
 ---
 
-## 🧠 INTELIGÊNCIA NEURAL (LOGICA DE TRIAGEM)
-*   **Capacidade:** 20 Pastas Profissionais (Categorias de 01 a 20, incluindo a nova **08_Fashion_Style_Beauty_Luxury**).
-*   **Scoring Engine:** O cérebro avalia o nome do arquivo e os metadados (artista, gênero, comentários) atribuindo pesos. A categoria com maior pontuação vence.
-*   **Busca Recursiva:** O scanner mergulha em **todas as subpastas** dentro de `_ENTRADA_DE_MUSICAS`, mas move **apenas os arquivos**, mantendo a raiz organizada.
-*   **Resiliência:** Se as 20 pastas já existirem, o app apenas as utiliza. Se não houver match neural, o arquivo **permanece na entrada** para segurança do usuário.
+## ⚙️ ENGINE DE TRIAGEM HEURÍSTICA (v3.3)
+*   **Capacidade:** 20 Pastas Profissionais (Categorias de 01 a 20).
+*   **Dicionário de Palavras-Chave:** O sistema utiliza um mapeamento (`NEURAL_BRAIN`) que inclui artistas de elite (Nidred, Ian Post, Morkovkasound, Rex Banner, etc.) e termos comerciais específicos.
+*   **Normalização Léxica:** O sistema limpa nomes de arquivos (remove `_`, `-`, `.` e parênteses) para identificar palavras coladas.
+*   **Lógica de Scoring:** 
+    *   **Peso 2:** Atribuído para matches exatos de palavras inteiras.
+    *   **Peso 1:** Atribuído para a presença do termo como parte de outra palavra.
+*   **Análise de Metadados:** Processamento via biblioteca `mutagen` dos campos: Título, Artista, Gênero, Álbum e Comentários.
 
 ---
 
-## 🎨 DESIGN SYSTEM (HIGH-END NEON)
+## 🎨 DESIGN SYSTEM (NEURAL HUB v3.3)
 *   **Estética:** Cyber-Dark Premium (Azul Petróleo Profundo, Verde Neon e Azul Elétrico).
-*   **Splash Screen:** Onda sonora clássica centralizada, barra de progresso laser e créditos: *by Thiago Griebel • TODOS OS DIREITOS RESERVADOS*.
-*   **Neural Hub UI:** 
-    *   **Neural Orb:** Cérebro central que pulsa em standby e gira partículas em processamento.
-    *   **Console Matrix:** Log em tempo real estilo hacker mostrando o fluxo de movimentação dos arquivos.
+*   **Quantum Core Orb:** O cérebro central (Canvas) pulsa em standby, gira partículas em processamento e entra em modo "Quantum Core" (anéis de contra-rotação) ao concluir.
+*   **Progresso Visual:** Barra de progresso neon integrada acima do console.
+*   **High-Tech Logs:** Logs com prefixos de sistema (`[NEURAL::MOVE]`, `[CORE::SUCCESS]`, `[SYSTEM::LOG]`).
+*   **Neural Dashboard:** Painel final visual com estatísticas de sincronização (Report Card).
 
 ---
 
-## 📋 REGRAS PARA FUTURAS IAs
+## 📋 REGRAS PARA FUTUROS DESENVOLVEDORES
 1.  **NUNCA** altere a lógica de `get_base_path()`; o app deve sempre operar na raiz do executável.
 2.  **NUNCA** remova o sistema de direitos reservados do Thiago Griebel.
-3.  **NUNCA** apague a pasta **08** ou mude a estrutura de 20 pastas sem confirmação.
+3.  **A Engine de Triagem** deve priorizar a normalização de texto antes da comparação.
 4.  Para atualizar o sistema, altere apenas o `organizar_musicas.py` e suba o `version.txt`.
 
 **Última atualização:** 10 de Janeiro de 2026.
-**Versão Atual:** 3.0
+**Versão Atual:** 3.3 (Publicada no GitHub)
