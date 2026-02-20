@@ -85,8 +85,8 @@ else:
 # ==============================================================================
 # AI GEMINI BATCH CLASSIFICATOR
 # ==============================================================================
-load_dotenv(os.path.join(get_base_path(), ".env"))
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+# COLE SUA CHAVE DO GOOGLE ENTRE AS ASPAS ABAIXO:
+GEMINI_API_KEY = "AIzaSyC2DcDfF8MRmvYAjUy4HsHV8RsDTlGeciw"
 
 if GEMINI_API_KEY:
     try:
