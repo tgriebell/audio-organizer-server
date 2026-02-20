@@ -10,6 +10,8 @@ import math
 import tkinter as tk
 import customtkinter as ctk
 from mutagen import File as MutagenFile
+import queue
+import json
 
 # ==============================================================================
 # ENGINE DE SISTEMA (PATH RESOLUTION)
@@ -38,7 +40,7 @@ PASTA_ENTRADA_NOME = "_ENTRADA_DE_MUSICAS"
 # ==============================================================================
 # SUPER NEURAL BRAIN (20 PASTAS)
 # ==============================================================================
-NEURAL_BRAIN = {
+DEFAULT_NEURAL_BRAIN = {
     "01_Alta_Energia_Impacto_Esportes_Carros_Acao": ["powerful", "exciting", "rock", "metal", "sport", "action", "extreme", "energy", "stomp", "drums", "driving", "aggressive", "hard", "pumping", "claps", "fast", "impact", "stadium", "power", "zac nelson", "viking", "energy", "pumping"],
     "02_Cinematic_Emocao_Filmes_Documentarios_Drama": ["cinematic", "epic", "dramatic", "score", "trailer", "orchestra", "emotional", "documentary", "sweeping", "heroic", "majestic", "story", "memories", "letter", "depth", "ethereal", "grand", "inspiration", "nidred", "guiding", "atmospheric", "hopeful", "oliver michael", "john isaac"],
     "03_Good_Vibes_Lifestyle_Vlog_Viagem_Comercial": ["uplifting", "happy", "carefree", "pop", "indie", "good vibes", "summer", "beach", "travel", "lifestyle", "commercial", "bright", "optimistic", "vlog", "joy", "look", "me", "sun", "fun", "positive", "ian post", "seth parson", "slpstrm"],
@@ -60,6 +62,23 @@ NEURAL_BRAIN = {
     "19_Electronic_Dance_Club_House_Techno": ["edm", "house", "techno", "dubstep", "party", "dance", "club", "rave", "trance", "synthwave", "future", "digital", "electro", "red city hero"],
     "20_Experimental_Abstract_SoundDesign": ["experimental", "abstract", "sound design", "glitch", "texture", "noise", "creative", "unusual", "artistic", "avante-garde", "minimal"]
 }
+
+categorias_path = os.path.join(get_base_path(), "categorias.json")
+if not os.path.exists(categorias_path):
+    try:
+        with open(categorias_path, "w", encoding="utf-8") as f:
+            json.dump(DEFAULT_NEURAL_BRAIN, f, indent=4, ensure_ascii=False)
+        NEURAL_BRAIN = DEFAULT_NEURAL_BRAIN.copy()
+    except Exception as e:
+        print(f"Erro ao salvar categorias.json: {e}")
+        NEURAL_BRAIN = DEFAULT_NEURAL_BRAIN.copy()
+else:
+    try:
+        with open(categorias_path, "r", encoding="utf-8") as f:
+            NEURAL_BRAIN = json.load(f)
+    except Exception as e:
+        print(f"Erro ao ler categorias.json: {e}")
+        NEURAL_BRAIN = DEFAULT_NEURAL_BRAIN.copy()
 
 # ==============================================================================
 # UI COMPONENTS
@@ -126,9 +145,20 @@ class NeuralHubApp(ctk.CTk):
         self.base_path = get_base_path()
         self.input_folder = os.path.join(self.base_path, PASTA_ENTRADA_NOME)
         self.found_files = []
+        self.ui_queue = queue.Queue()
+        self.process_ui_queue()
         self.setup_ui()
         self.fade_in()
         self.after(800, self.auto_scan)
+
+    def process_ui_queue(self):
+        try:
+            while True:
+                task_action = self.ui_queue.get_nowait()
+                task_action()
+        except queue.Empty:
+            pass
+        self.after(50, self.process_ui_queue)
 
     def fade_in(self):
         a = self.attributes("-alpha")
@@ -165,7 +195,7 @@ class NeuralHubApp(ctk.CTk):
         self.console_text.pack(fill="both", expand=True, padx=25, pady=15)
 
     def log_console(self, msg, type="INFO"):
-        prefix = {"INFO": "[SYSTEM::LOG]", "SUCCESS": "[CORE::SUCCESS]", "MOVE": "[NEURAL::MOVE]", "WAIT": "[SYSTEM::SCAN]"}.get(type, "[LOG]")
+        prefix = {"INFO": "[SYSTEM::LOG]", "SUCCESS": "[CORE::SUCCESS]", "MOVE": "[NEURAL::MOVE]", "WAIT": "[SYSTEM::SCAN]", "ERROR": "[SYSTEM::ERROR]"}.get(type, "[LOG]")
         self.console_text.insert("end", f"{prefix} {msg}\n"); self.console_text.see("end")
 
     def show_report(self, count):
@@ -217,7 +247,8 @@ class NeuralHubApp(ctk.CTk):
                             if key in audio: 
                                 metadata_text = " ".join(audio[key]).lower()
                                 text_analise += " " + re.sub(r'[_.\-()\[\]]', ' ', metadata_text)
-                except: pass
+                except Exception as e:
+                    self.ui_queue.put(lambda n=name, err=str(e): self.log_console(f"Meta err | {n[:15]}...: {err}", "ERROR"))
                 
                 scores = {cat: 0 for cat in NEURAL_BRAIN.keys()}
                 for cat, keywords in NEURAL_BRAIN.items():
@@ -231,18 +262,19 @@ class NeuralHubApp(ctk.CTk):
                 if best_cat:
                     try:
                         shutil.move(orig_path, os.path.join(self.base_path, best_cat, name))
-                        self.after(0, lambda n=name, c=best_cat: self.log_console(f"{n[:25]}... >> [{c[:12]}]", "MOVE"))
+                        self.ui_queue.put(lambda n=name, c=best_cat: self.log_console(f"{n[:25]}... >> [{c[:12]}]", "MOVE"))
                         count += 1
-                    except: pass
+                    except Exception as e:
+                        self.ui_queue.put(lambda n=name, err=str(e): self.log_console(f"Mv err | {n[:15]}...: {err}", "ERROR"))
                 else:
-                    self.after(0, lambda n=name: self.log_console(f"{n[:25]}... No neural match.", "INFO"))
+                    self.ui_queue.put(lambda n=name: self.log_console(f"{n[:25]}... No neural match.", "INFO"))
                 
                 # ATUALIZA PROGRESSO
                 progress = (i + 1) / total
-                self.after(0, lambda p=progress: self.progress_bar.set(p))
+                self.ui_queue.put(lambda p=progress: self.progress_bar.set(p))
                 time.sleep(0.04)
 
-            self.after(0, lambda c=count: self.finish(c))
+            self.ui_queue.put(lambda c=count: self.finish(c))
         threading.Thread(target=work, daemon=True).start()
 
     def finish(self, count):

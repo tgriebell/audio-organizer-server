@@ -143,13 +143,8 @@ def main():
         target_path = dev_file
 
     if os.path.exists(target_path):
-        with open(target_path, "r", encoding="utf-8") as f: code = f.read()
-        import mutagen, shutil
-        scope = {
-            '__name__': '__main__', 'ctk': ctk, 'ctypes': ctypes, 'os': os, 'sys': sys,
-            'mutagen': mutagen, 'shutil': shutil, 'math': math, 'time': time, 'threading': threading, 'tk': tk
-        }
-        exec(code, scope)
+        import mutagen, shutil, queue, json, runpy, re
+        runpy.run_path(target_path, run_name="__main__")
 
 if __name__ == "__main__":
     main()
