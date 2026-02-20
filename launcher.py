@@ -144,6 +144,7 @@ def main():
 
     if os.path.exists(target_path):
         import mutagen, shutil, queue, json, runpy, re
+        import google.generativeai, dotenv
         runpy.run_path(target_path, run_name="__main__")
 
 if __name__ == "__main__":

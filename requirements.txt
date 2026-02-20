@@ -5,3 +5,5 @@ requests
 pillow
 packaging
 pyinstaller
+google-generativeai
+python-dotenv

@@ -12,6 +12,8 @@ import customtkinter as ctk
 from mutagen import File as MutagenFile
 import queue
 import json
+import google.generativeai as genai
+from dotenv import load_dotenv
 
 # ==============================================================================
 # ENGINE DE SISTEMA (PATH RESOLUTION)
@@ -79,6 +81,51 @@ else:
     except Exception as e:
         print(f"Erro ao ler categorias.json: {e}")
         NEURAL_BRAIN = DEFAULT_NEURAL_BRAIN.copy()
+
+# ==============================================================================
+# AI GEMINI BATCH CLASSIFICATOR
+# ==============================================================================
+load_dotenv(os.path.join(get_base_path(), ".env"))
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+
+if GEMINI_API_KEY:
+    try:
+        genai.configure(api_key=GEMINI_API_KEY)
+        gemini_model = genai.GenerativeModel('gemini-2.5-flash', generation_config={"response_mime_type": "application/json"})
+    except Exception as e:
+        print("Erro ao configurar Gemini:", e)
+        gemini_model = None
+else:
+    gemini_model = None
+
+def get_gemini_batch_classification(tracks_data_list, categorias_dict):
+    """ Envia um Lote de N músicas para a IA e retorna um DICIONARIO com as respostas """
+    if not gemini_model: return None
+    
+    cats_str = "\n".join([f"- {k}" for k in categorias_dict.keys()])
+    
+    prompt = f"""Você é um classificador musical de alta precisão. Sua tarefa é analisar a lista de músicas abaixo, o nome do artista, título e o nome do arquivo, e mapeá-las para a categoria mais apropriada com base na 'vibe'/estilo musical inferido.
+
+Categorias válidas permitidas (escolha apenas UMA para cada música, sendo a chave exata):
+{cats_str}
+
+Aqui estão as músicas para classificar:
+"""
+    for track in tracks_data_list:
+        prompt += f"ID: {track['id']} | Arquivo: {track['file']} | Metadados: {track['meta']}\n"
+    
+    prompt += """
+Responda APENAS com um objeto JSON puro, onde as chaves são os IDs das músicas que te passei e os valores são as categorias escolhidas que pertencem EXATAMENTE à lista que forneci acima. Se não tiver certeza de qual é, defina como null.
+Exemplo:
+{"1": "02_Cinematic_Emocao_Filmes_Documentarios_Drama", "2": "12_Urban_Trap_HipHop_Modern"}
+"""
+    try:
+        response = gemini_model.generate_content(prompt)
+        result = json.loads(response.text)
+        return result
+    except Exception as e:
+        print(f"Gemini API Error: {e}")
+        return None
 
 # ==============================================================================
 # UI COMPONENTS
@@ -234,45 +281,101 @@ class NeuralHubApp(ctk.CTk):
             
             total = len(self.found_files)
             count = 0
-            for i, orig_path in enumerate(self.found_files):
-                name = os.path.basename(orig_path)
-                # NORMALIZAÇÃO HIPERINTELIGENTE
-                text_analise = name.lower()
-                text_analise = re.sub(r'[_.\-()\[\]]', ' ', text_analise)
-                
-                try:
-                    audio = MutagenFile(orig_path, easy=True)
-                    if audio:
-                        for key in ['artist', 'genre', 'comment', 'title', 'album']:
-                            if key in audio: 
-                                metadata_text = " ".join(audio[key]).lower()
-                                text_analise += " " + re.sub(r'[_.\-()\[\]]', ' ', metadata_text)
-                except Exception as e:
-                    self.ui_queue.put(lambda n=name, err=str(e): self.log_console(f"Meta err | {n[:15]}...: {err}", "ERROR"))
-                
-                scores = {cat: 0 for cat in NEURAL_BRAIN.keys()}
-                for cat, keywords in NEURAL_BRAIN.items():
-                    for word in keywords:
-                        if f" {word} " in f" {text_analise} ":
-                            scores[cat] += 2
-                        elif word in text_analise:
-                            scores[cat] += 1
-                            
-                best_cat = max(scores, key=scores.get) if max(scores.values()) > 0 else None
-                if best_cat:
+            
+            BATCH_SIZE = 40
+            batches = [self.found_files[i:i + BATCH_SIZE] for i in range(0, total, BATCH_SIZE)]
+            
+            if gemini_model:
+                self.ui_queue.put(lambda: self.log_console(f"AI Gemini Activado. Processando em {len(batches)} Lotes.", "INFO"))
+            else:
+                self.ui_queue.put(lambda: self.log_console(f"Modo Offline Clássico Activado.", "INFO"))
+            
+            processed_so_far = 0
+
+            for batch_index, batch in enumerate(batches):
+                # Fase 1: Coleta Local Extrema e Rápida do Lote
+                batch_data_to_ai = []
+                batch_local_cache = {} 
+
+                for orig_path in batch:
+                    name = os.path.basename(orig_path)
+                    text_analise = name.lower()
+                    text_analise = re.sub(r'[_.\-()\[\]]', ' ', text_analise)
+                    
                     try:
-                        shutil.move(orig_path, os.path.join(self.base_path, best_cat, name))
-                        self.ui_queue.put(lambda n=name, c=best_cat: self.log_console(f"{n[:25]}... >> [{c[:12]}]", "MOVE"))
-                        count += 1
+                        audio = MutagenFile(orig_path, easy=True)
+                        if audio:
+                            for key in ['artist', 'genre', 'title']:
+                                if key in audio: 
+                                    text_analise += " | " + " ".join(audio[key])
                     except Exception as e:
-                        self.ui_queue.put(lambda n=name, err=str(e): self.log_console(f"Mv err | {n[:15]}...: {err}", "ERROR"))
-                else:
-                    self.ui_queue.put(lambda n=name: self.log_console(f"{n[:25]}... No neural match.", "INFO"))
+                        pass
+                    
+                    # Store ID for AI mapping logic
+                    track_id = str(len(batch_data_to_ai) + 1)
+                    batch_data_to_ai.append({
+                        "id": track_id,
+                        "file": name,
+                        "meta": text_analise
+                    })
+                    batch_local_cache[track_id] = {
+                        "path": orig_path,
+                        "name": name,
+                        "local_meta": text_analise  # Usado pro Fallback Offline
+                    }
                 
-                # ATUALIZA PROGRESSO
-                progress = (i + 1) / total
-                self.ui_queue.put(lambda p=progress: self.progress_bar.set(p))
-                time.sleep(0.04)
+                # Fase 2: O Cérebro entra em ação
+                gemini_answers = None
+                if gemini_model:
+                    self.ui_queue.put(lambda bi=batch_index+1, bt=len(batches): self.log_console(f"Enviando Lote {bi}/{bt} para a IA...", "WAIT"))
+                    gemini_answers = get_gemini_batch_classification(batch_data_to_ai, NEURAL_BRAIN)
+                    
+                    if gemini_answers:
+                        self.ui_queue.put(lambda: self.log_console(f"Lote classificado via Rede Neural LLM.", "SUCCESS"))
+                    else:
+                        self.ui_queue.put(lambda: self.log_console(f"Falha na IA. Tentando Engine Offline pro Lote...", "ERROR"))
+
+                # Fase 3: Movimentação (Híbrida)
+                for track_data in batch_data_to_ai:
+                    track_id = track_data["id"]
+                    cache = batch_local_cache[track_id]
+                    orig_path = cache["path"]
+                    name = cache["name"]
+                    local_meta = cache["local_meta"].lower()
+                    best_cat = None
+
+                    if gemini_answers and str(track_id) in gemini_answers and gemini_answers[str(track_id)] in NEURAL_BRAIN:
+                        best_cat = gemini_answers[str(track_id)]
+                    else:
+                        # FALLBACK OFFLINE CLASSICO (Palavras chave ponderadas)
+                        scores = {cat: 0 for cat in NEURAL_BRAIN.keys()}
+                        for cat, keywords in NEURAL_BRAIN.items():
+                            for word in keywords:
+                                if f" {word} " in f" {local_meta} ":
+                                    scores[cat] += 2
+                                elif word in local_meta:
+                                    scores[cat] += 1
+                        best_cat = max(scores, key=scores.get) if max(scores.values()) > 0 else None
+
+                    # MOVE FÍSICO
+                    if best_cat:
+                        try:
+                            shutil.move(orig_path, os.path.join(self.base_path, best_cat, name))
+                            self.ui_queue.put(lambda n=name, c=best_cat: self.log_console(f"{n[:25]}... >> [{c[:12]}]", "MOVE"))
+                            count += 1
+                        except Exception as e:
+                            self.ui_queue.put(lambda n=name, err=str(e): self.log_console(f"Mv err | {n[:15]}...: {err}", "ERROR"))
+                    else:
+                        self.ui_queue.put(lambda n=name: self.log_console(f"{n[:25]}... No neural match.", "INFO"))
+                    
+                    processed_so_far += 1
+                    progress = processed_so_far / total
+                    self.ui_queue.put(lambda p=progress: self.progress_bar.set(p))
+                    time.sleep(0.02) # Soft delay pra fluidez visual
+                
+                # Ant-Rate Limit para AI
+                if gemini_model and gemini_answers and batch_index < len(batches) - 1:
+                    time.sleep(3)
 
             self.ui_queue.put(lambda c=count: self.finish(c))
         threading.Thread(target=work, daemon=True).start()
