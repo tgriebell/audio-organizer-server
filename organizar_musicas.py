@@ -16,14 +16,33 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 
 # ==============================================================================
-# ENGINE DE SISTEMA (PATH RESOLUTION)
+# ENGINE DE SISTEMA (WIN32 TASKBAR & ICON HACK)
 # ==============================================================================
+def set_app_icon(window, icon_path):
+    try:
+        if sys.platform == "win32":
+            hwnd = ctypes.windll.user32.GetParent(window.winfo_id())
+            icon_flags = 1 
+            hicon = ctypes.windll.user32.LoadImageW(0, icon_path, 1, 0, 0, 0x00000010 | 0x00008000)
+            ctypes.windll.user32.SendMessageW(hwnd, 0x0080, icon_flags, hicon)
+    except Exception as e:
+        print(f"Icon loader error: {e}")
+
 try:
-    myappid = 'tgriebell.audioorganizer.neural.v2.9'
+    myappid = 'tgriebell.audioorganizer.neural.v4.0'
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 except: pass
 
 def get_base_path():
+    if getattr(sys, 'frozen', False):
+        return sys._MEIPASS
+    return os.path.dirname(os.path.abspath(__file__))
+
+def log_debug(msg):
+    pass
+
+def get_real_run_path():
+    # Returns where the .exe is running from, used for the IN/OUT folders!
     if getattr(sys, 'frozen', False):
         return os.path.dirname(sys.executable)
     return os.path.dirname(os.path.abspath(__file__))
@@ -31,11 +50,11 @@ def get_base_path():
 # ==============================================================================
 # DESIGN SYSTEM
 # ==============================================================================
-COLOR_BG = "#05070a"
-COLOR_ACCENT = "#00ff66"
-COLOR_NEON_BLUE = "#00ccff"
-COLOR_TEXT_DIM = "#445566"
-COLOR_CONSOLE_BG = "#020408"
+COLOR_BG = "#03080a" # Mais denso, quase onix escuro
+COLOR_ACCENT = "#05d590" # Verde tech sofisticado (Deep Tech Green)
+COLOR_NEON_BLUE = "#048a60" # Verde secundário mais profundo
+COLOR_TEXT_DIM = "#446655" # Verde-acinzentado sutil
+COLOR_CONSOLE_BG = "#010304"
 
 PASTA_ENTRADA_NOME = "_ENTRADA_DE_MUSICAS"
 
@@ -85,8 +104,17 @@ else:
 # ==============================================================================
 # AI GEMINI BATCH CLASSIFICATOR
 # ==============================================================================
-# COLE SUA CHAVE DO GOOGLE ENTRE AS ASPAS ABAIXO:
-GEMINI_API_KEY = "AIzaSyC2DcDfF8MRmvYAjUy4HsHV8RsDTlGeciw"
+# CONFIGURAR CHAVE EXTERNA (Seguranca contra vazamentos no Github)
+def load_api_key():
+    import dotenv
+    env_path = os.path.join(get_base_path(), ".env")
+    if os.path.exists(env_path):
+        dotenv.load_dotenv(env_path)
+        key = os.getenv("GEMINI_API_KEY")
+        if key: return key.strip()
+    return None
+
+GEMINI_API_KEY = load_api_key()
 
 if GEMINI_API_KEY:
     try:
@@ -111,6 +139,9 @@ Categorias válidas permitidas (escolha apenas UMA para cada música, sendo a ch
 
 Aqui estão as músicas para classificar:
 """
+    log_debug("--- [AI BATCH PROCESSING INICIADO] ---")
+    log_debug(f"Prompt base configurado. Total musicas: {len(tracks_data_list)}")
+    
     for track in tracks_data_list:
         prompt += f"ID: {track['id']} | Arquivo: {track['file']} | Metadados: {track['meta']}\n"
     
@@ -119,12 +150,17 @@ Responda APENAS com um objeto JSON puro, onde as chaves são os IDs das músicas
 Exemplo:
 {"1": "02_Cinematic_Emocao_Filmes_Documentarios_Drama", "2": "12_Urban_Trap_HipHop_Modern"}
 """
+    log_debug(f"Prompt completo gerado com {len(prompt)} caracteres. Enviando para Google Gemini API...")
+
     try:
         response = gemini_model.generate_content(prompt)
-        result = json.loads(response.text)
+        log_debug(f"SUCESSO: Resposta bruta do Gemini recebida:\n{response.text}")
+        text = response.text.replace('```json', '').replace('```', '').strip()
+        result = json.loads(text)
+        log_debug(f"JSON Parse com sucesso: {result}")
         return result
     except Exception as e:
-        print(f"Gemini API Error: {e}")
+        log_debug(f"ERRO CRITICO (Gemini API Falhou): {str(e)}")
         return None
 
 # ==============================================================================
@@ -132,28 +168,35 @@ Exemplo:
 # ==============================================================================
 
 class NeuralOrb(tk.Canvas):
-    def __init__(self, master, **kwargs):
+    def __init__(self, master, scale=1.0, **kwargs):
         super().__init__(master, bg=COLOR_BG, highlightthickness=0, **kwargs)
         self.phase = 0; self.state = "idle" 
+        self.scale = scale
         self.animate()
 
     def animate(self):
         self.delete("all")
         w, h = self.winfo_width(), self.winfo_height()
-        if w < 10: w, h = 300, 300
+        if w < 10: w, h = int(300*self.scale), int(300*self.scale)
         cx, cy = w/2, h/2
         self.phase += 0.05
         
-        pulse = (math.sin(self.phase) * 8) + 65
+        pulse = (math.sin(self.phase) * 8 * self.scale) + (65 * self.scale)
         color = COLOR_NEON_BLUE if self.state == "idle" else COLOR_ACCENT
-        if self.state == "success": color = "#fff"
+        if self.state == "success": color = "#ffffff"
 
-        for i in range(6):
-            size = pulse + (i * 12)
-            opacity_color = self.lerp_color(COLOR_BG, color, (6-i)/15)
-            self.create_oval(cx-size, cy-size, cx+size, cy+size, outline=opacity_color, width=2)
+        # Radial Deep Glow
+        r1 = 200 * self.scale
+        r2 = 120 * self.scale
+        self.create_oval(cx-r1, cy-r1, cx+r1, cy+r1, fill="#040b14", outline="")
+        self.create_oval(cx-r2, cy-r2, cx+r2, cy+r2, fill="#071324", outline="")
         
-        self.create_oval(cx-pulse, cy-pulse, cx+pulse, cy+pulse, outline=color, width=3)
+        for i in range(6):
+            size = pulse + (i * 12 * self.scale)
+            opacity_color = self.lerp_color("#071324", color, (6-i)/15)
+            self.create_oval(cx-size, cy-size, cx+size, cy+size, outline=opacity_color, width=max(1, int(2*self.scale)))
+        
+        self.create_oval(cx-pulse, cy-pulse, cx+pulse, cy+pulse, outline=color, width=max(1, int(3*self.scale)))
 
         if self.state in ["busy", "success"]:
             num_dots = 12 if self.state == "busy" else 8
@@ -162,15 +205,24 @@ class NeuralOrb(tk.Canvas):
             
             for i in range(num_dots):
                 ang = self.phase * speed + (i * (math.pi * 2 / num_dots))
-                dist = pulse + 25 if self.state == "busy" else pulse + 40
+                dist = pulse + (25 * self.scale) if self.state == "busy" else pulse + (40 * self.scale)
                 px = cx + math.cos(ang) * dist; py = cy + math.sin(ang) * dist
                 self.create_oval(px-3, py-3, px+3, py+3, fill=dot_color, outline="")
                 
             if self.state == "success":
                 for i in range(5):
                     ang = -self.phase * 0.8 + (i * (math.pi * 2 / 5))
-                    px = cx + math.cos(ang) * (pulse + 60); py = cy + math.sin(ang) * (pulse + 60)
-                    self.create_oval(px-2, py-2, px+2, py+2, fill="#fff", outline="")
+                    px = cx + math.cos(ang) * (pulse + 60 * self.scale); py = cy + math.sin(ang) * (pulse + 60 * self.scale)
+                    self.create_oval(px-2, py-2, px+2, py+2, fill="#ffffff", outline="")
+                
+                # V5.0.0: The Holographic Satisfaction Checkmark (Explicit Segments)
+                cs = int(max(15, 30 * self.scale))
+                p1x, p1y = int(cx - cs*0.8), int(cy)
+                p2x, p2y = int(cx - cs*0.1), int(cy + cs*0.7)
+                p3x, p3y = int(cx + cs), int(cy - cs*0.8)
+                lw = int(max(3, 6*self.scale))
+                self.create_line(p1x, p1y, p2x, p2y, fill=COLOR_ACCENT, width=lw, capstyle="round")
+                self.create_line(p2x, p2y, p3x, p3y, fill=COLOR_ACCENT, width=lw, capstyle="round")
 
         self.after(30, self.animate)
 
@@ -183,20 +235,43 @@ class NeuralOrb(tk.Canvas):
 class NeuralHubApp(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.overrideredirect(True)
+        
+        self.title("Neural Hub v5.0.0 - True Tech Edition")
+        
+        # NATIVE MAXIMIZE WITH EXPLICIT DIMENSIONS
+        self.sw, self.sh = self.winfo_screenwidth(), self.winfo_screenheight()
+        
+        # Calculate dynamic global scale multiplier based on standard 1080p
+        self.scale = min(self.sw / 1920, self.sh / 1080)
+        # Cap scaling so it doesn't become over-crushed on small laptops (floor 0.65) or overly massive on 4k (ceil 1.5)
+        self.scale = max(0.65, min(self.scale, 1.5))
+        
+        self.geometry(f"{self.sw}x{self.sh}+0+0")
         self.attributes("-alpha", 0.0)
-        w, h = 900, 750
-        sw, sh = self.winfo_screenwidth(), self.winfo_screenheight()
-        self.geometry(f"{w}x{h}+{int((sw-w)/2)}+{int((sh-h)/2)}")
+        self.after(100, lambda: self.state("zoomed"))
+        
+        self.bind("<Escape>", lambda e: self.destroy())
         self.configure(fg_color=COLOR_BG)
+        
         self.base_path = get_base_path()
-        self.input_folder = os.path.join(self.base_path, PASTA_ENTRADA_NOME)
+        self.run_path = get_real_run_path()
+        
+        # RENDER BEFORE ICON APPLY (CRITICAL FOR TASKBAR HOOK)
+        self.update_idletasks()
+        try:
+            icon_path = os.path.join(self.base_path, "icone_novo.ico")
+            self.iconbitmap(icon_path)
+            set_app_icon(self, icon_path)
+        except: pass
+        
+        self.input_folder = os.path.join(self.run_path, PASTA_ENTRADA_NOME)
         self.found_files = []
         self.ui_queue = queue.Queue()
         self.process_ui_queue()
         self.setup_ui()
-        self.fade_in()
-        self.after(800, self.auto_scan)
+        # Start fade in IMMEDIATELY because launcher.py is frozen behind us visually
+        self.after(100, self.fade_in)
+        self.after(1000, self.auto_scan)
 
     def process_ui_queue(self):
         try:
@@ -209,51 +284,78 @@ class NeuralHubApp(ctk.CTk):
 
     def fade_in(self):
         a = self.attributes("-alpha")
-        if a < 1.0: self.attributes("-alpha", a + 0.1); self.after(20, self.fade_in)
+        if a < 1.0: 
+            self.attributes("-alpha", a + 0.08)
+            self.after(20, self.fade_in)
+        else:
+            import sys
+            if hasattr(sys, '_splash_window'):
+                try:
+                    sys._splash_window.destroy()
+                except: pass
 
     def setup_ui(self):
-        self.header = ctk.CTkFrame(self, fg_color="transparent", height=50)
-        self.header.pack(fill="x", padx=20, pady=5)
-        self.header.bind("<Button-1>", self.start_move)
-        self.header.bind("<B1-Motion>", self.do_move)
-        ctk.CTkLabel(self.header, text="NEURAL HUB ENGINE v3.3 // ACTIVE", font=("Consolas", 10, "bold"), text_color=COLOR_TEXT_DIM).pack(side="left")
-        ctk.CTkButton(self.header, text="✕", width=40, height=40, fg_color="transparent", hover_color="#c42b1c", command=self.destroy).pack(side="right")
+        # 1. THE QUANTUM CORE STAGE (Center of the screen)
+        self.main_container = ctk.CTkFrame(self, fg_color="transparent")
+        self.main_container.pack(fill="both", expand=True)
 
-        self.hub_area = ctk.CTkFrame(self, fg_color="transparent")
-        self.hub_area.pack(fill="both", expand=True)
-        self.orb = NeuralOrb(self.hub_area, width=400, height=350)
-        self.orb.pack(pady=(10, 0))
-        self.lbl_main = ctk.CTkLabel(self.hub_area, text="SCANNING...", font=("Segoe UI Light", 32), text_color="white")
-        self.lbl_main.pack(pady=5)
-        self.lbl_sub = ctk.CTkLabel(self.hub_area, text="Awaiting neural objects", font=("Consolas", 12), text_color=COLOR_NEON_BLUE)
-        self.lbl_sub.pack()
+        # per-fect center, slightly elevated to give the button explicit lower margin
+        self.core_area = ctk.CTkFrame(self.main_container, fg_color="transparent")
+        self.core_area.place(relx=0.5, rely=0.44, anchor="center")
+
+        # The Grand Orb (Dynamically Scaled)
+        orb_w = int(450 * self.scale)
+        orb_h = int(400 * self.scale)
+        self.orb = NeuralOrb(self.core_area, scale=self.scale, width=orb_w, height=orb_h)
+        self.orb.pack(pady=(0, int(10 * self.scale)))
+
+        # Minimalist Title (Dynamically Scaled)
+        font_main = int(40 * self.scale)
+        self.lbl_main = ctk.CTkLabel(self.core_area, text="AWAITING NEURAL LINK", font=("Segoe UI Light", font_main), text_color="white")
+        self.lbl_main.pack(pady=(int(5 * self.scale), int(2 * self.scale)))
         
-        self.progress_bar = ctk.CTkProgressBar(self.hub_area, width=400, height=2, fg_color="#0a1a30", progress_color=COLOR_ACCENT)
+        # Progress Bar (Dynamically Scaled)
+        self.progress_bar = ctk.CTkProgressBar(self.core_area, width=int(400 * self.scale), height=max(2, int(3 * self.scale)), fg_color="#0a1a30", progress_color=COLOR_ACCENT)
         self.progress_bar.set(0)
-        self.progress_bar.pack(pady=20)
+        self.progress_bar.pack(pady=int(20 * self.scale))
 
-        self.btn_action = ctk.CTkButton(self.hub_area, text="INITIALIZE NEURAL DEPLOYMENT", font=("Segoe UI", 16, "bold"), fg_color="transparent", border_width=2, border_color=COLOR_NEON_BLUE, text_color=COLOR_NEON_BLUE, height=65, width=350, corner_radius=32, command=self.run_process)
-        self.btn_action.pack(pady=(10, 30))
+        # Dynamic Glowing Action Button
+        btn_font = int(14 * self.scale)
+        btn_w = int(320 * self.scale)
+        btn_h = int(50 * self.scale)
+        self.btn_action = ctk.CTkButton(self.core_area, text="ACTIVATE MUSIC CORE", font=("Segoe UI Semibold", btn_font), fg_color="#041812", hover_color="#062b1f", border_width=2, border_color=COLOR_NEON_BLUE, text_color=COLOR_ACCENT, text_color_disabled=COLOR_TEXT_DIM, height=btn_h, width=btn_w, corner_radius=12, command=self.run_process)
+        self.btn_action.pack(pady=(int(5 * self.scale), int(10 * self.scale)))
+        self.btn_action.configure(state="disabled") # Start visible but disabled
 
-        self.bottom_area = ctk.CTkFrame(self, fg_color=COLOR_CONSOLE_BG, height=180, corner_radius=0, border_width=1, border_color="#0a1a30")
-        self.bottom_area.pack(fill="x")
-        self.bottom_area.pack_propagate(False)
-        self.console_text = ctk.CTkTextbox(self.bottom_area, fg_color="transparent", font=("Consolas", 11), text_color=COLOR_ACCENT, activate_scrollbars=False)
-        self.console_text.pack(fill="both", expand=True, padx=25, pady=15)
+        # 3. SLEEK FLOATING STATUS LOG (Bottom Docked)
+        self.bottom_container = ctk.CTkFrame(self.main_container, fg_color="transparent")
+        self.bottom_container.pack(side="bottom", fill="x", pady=(0, int(10 * self.scale)))
+        
+        self.report_container = ctk.CTkFrame(self.bottom_container, fg_color="transparent")
+        self.report_container.pack(side="top", pady=(0, int(15 * self.scale)))
+
+        font_log = max(10, int(12 * self.scale))
+        self.lbl_status = ctk.CTkLabel(self.bottom_container, text="System standing by for Thiago Griebel", font=("Consolas", font_log), text_color=COLOR_TEXT_DIM)
+        self.lbl_status.pack(side="bottom")
 
     def log_console(self, msg, type="INFO"):
-        prefix = {"INFO": "[SYSTEM::LOG]", "SUCCESS": "[CORE::SUCCESS]", "MOVE": "[NEURAL::MOVE]", "WAIT": "[SYSTEM::SCAN]", "ERROR": "[SYSTEM::ERROR]"}.get(type, "[LOG]")
-        self.console_text.insert("end", f"{prefix} {msg}\n"); self.console_text.see("end")
+        prefix = {"INFO": "SYSTEM", "SUCCESS": "CORE", "MOVE": "SYNC", "WAIT": "SCAN", "ERROR": "ERR"}.get(type, "LOG")
+        self.lbl_status.configure(text=f"[{prefix}] {msg}")
 
     def show_report(self, count):
-        self.console_text.pack_forget()
-        report_frame = ctk.CTkFrame(self.bottom_area, fg_color="transparent")
-        report_frame.pack(fill="both", expand=True, padx=40, pady=20)
+        self.lbl_status.configure(text=f"[STABLE] Neural objects optimized for Thiago Griebel")
+        
+        for widget in self.report_container.winfo_children():
+            widget.destroy()
+            
         stats = [("STATUS", "STABLE", COLOR_ACCENT), ("OBJECTS", f"{count} SYNCED", "#fff"), ("OPTIMIZATION", "100%", COLOR_NEON_BLUE), ("CORE", "ACTIVE", COLOR_ACCENT)]
+        font_label = max(8, int(10 * self.scale))
+        font_val = max(14, int(18 * self.scale))
+        
         for label, val, col in stats:
-            f = ctk.CTkFrame(report_frame, fg_color="transparent"); f.pack(side="left", expand=True)
-            ctk.CTkLabel(f, text=label, font=("Consolas", 10, "bold"), text_color=COLOR_TEXT_DIM).pack()
-            ctk.CTkLabel(f, text=val, font=("Segoe UI", 18, "bold"), text_color=col).pack()
+            f = ctk.CTkFrame(self.report_container, fg_color="transparent"); f.pack(side="left", expand=True, padx=int(20 * self.scale))
+            ctk.CTkLabel(f, text=label, font=("Consolas", font_label, "bold"), text_color=COLOR_TEXT_DIM).pack()
+            ctk.CTkLabel(f, text=val, font=("Segoe UI", font_val, "bold"), text_color=col).pack()
 
     def start_move(self, e): self.x, self.y = e.x, e.y
     def do_move(self, e): self.geometry(f"+{self.winfo_x() + (e.x - self.x)}+{self.winfo_y() + (e.y - self.y)}")
@@ -266,9 +368,15 @@ class NeuralHubApp(ctk.CTk):
                 if f.lower().endswith((".mp3", ".wav", ".flac", ".aiff")):
                     found.append(os.path.join(root, f))
         self.found_files = found
-        self.lbl_main.configure(text=f"{len(found)} OBJECTS DETECTED")
-        self.lbl_sub.configure(text=f"Neural sorting ready for Thiago Griebel")
-        self.log_console(f"Scan complete: {len(found)} objects located.", "WAIT")
+        
+        if len(found) > 0:
+            self.lbl_main.configure(text="READY TO ORGANIZE")
+            self.log_console(f"Scan complete: {len(found)} objects indexed in Neural Library.", "WAIT")
+            self.btn_action.configure(state="normal")
+        else:
+            self.lbl_main.configure(text="LIBRARY EMPTY")
+            self.log_console("System Idle. Waiting for neural objects in input directory.", "INFO")
+            self.btn_action.configure(state="disabled")
 
     def run_process(self):
         if not self.found_files: return
@@ -328,6 +436,7 @@ class NeuralHubApp(ctk.CTk):
                 gemini_answers = None
                 if gemini_model:
                     self.ui_queue.put(lambda bi=batch_index+1, bt=len(batches): self.log_console(f"Enviando Lote {bi}/{bt} para a IA...", "WAIT"))
+                    log_debug(f"Iniciando requisicao do lote {batch_index+1}")
                     gemini_answers = get_gemini_batch_classification(batch_data_to_ai, NEURAL_BRAIN)
                     
                     if gemini_answers:
@@ -360,7 +469,7 @@ class NeuralHubApp(ctk.CTk):
                     # MOVE FÍSICO
                     if best_cat:
                         try:
-                            shutil.move(orig_path, os.path.join(self.base_path, best_cat, name))
+                            shutil.move(orig_path, os.path.join(self.run_path, best_cat, name))
                             self.ui_queue.put(lambda n=name, c=best_cat: self.log_console(f"{n[:25]}... >> [{c[:12]}]", "MOVE"))
                             count += 1
                         except Exception as e:
@@ -371,7 +480,7 @@ class NeuralHubApp(ctk.CTk):
                     processed_so_far += 1
                     progress = processed_so_far / total
                     self.ui_queue.put(lambda p=progress: self.progress_bar.set(p))
-                    time.sleep(0.02) # Soft delay pra fluidez visual
+                    time.sleep(0.15) # Dramatic slowdown for visual mapping
                 
                 # Ant-Rate Limit para AI
                 if gemini_model and gemini_answers and batch_index < len(batches) - 1:
@@ -383,7 +492,6 @@ class NeuralHubApp(ctk.CTk):
     def finish(self, count):
         self.orb.state = "success"; self.btn_action.configure(state="normal", text="NEURAL SYSTEM SYNCED", fg_color=COLOR_ACCENT, text_color="black")
         self.lbl_main.configure(text="CORE STABILITY REACHED")
-        self.lbl_sub.configure(text=f"Neural objects optimized for Thiago Griebel", text_color=COLOR_ACCENT)
         self.show_report(count)
 
 if __name__ == "__main__":
